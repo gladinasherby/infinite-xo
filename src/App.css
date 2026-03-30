@@ -176,3 +176,35 @@ header {
   color: #000;
   border-color: #000;
 }
+
+/* Mobile Responsiveness */
+@media screen and (max-width: 480px) {
+  .scoreboard {
+    font-size: 1.1rem; /* Slightly smaller text */
+    letter-spacing: 2px;
+    margin-bottom: 15px;
+  }
+
+  .grid {
+    /* Scale the cells down to 80px or 90px */
+    grid-template-columns: repeat(3, 85px);
+    grid-template-rows: repeat(3, 85px);
+  }
+
+  .cell {
+    width: 85px;
+    height: 85px;
+    font-size: 2.8rem; /* Scale font size with the box */
+  }
+
+  .status {
+    font-size: 0.8rem;
+    margin-bottom: 30px;
+  }
+
+  .reset-all {
+    margin-top: 40px;
+    padding: 12px 25px; /* Larger tap target for thumbs */
+    font-size: 0.8rem;
+  }
+}
