@@ -1,0 +1,178 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background-color: #fff;
+  font-family: "Courier New", Courier, monospace;
+}
+
+.scoreboard {
+  display: flex;
+  gap: 20px;
+  font-size: 1.2rem;
+  font-weight: bold;
+  margin-bottom: 20px;
+  letter-spacing: 3px;
+}
+
+.score-divider {
+  opacity: 0.3;
+}
+
+header {
+  margin-bottom: 30px;
+  text-align: center;
+}
+.status {
+  letter-spacing: 2px;
+  font-weight: bold;
+  height: 20px;
+  text-transform: uppercase;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, 100px);
+  grid-template-rows: repeat(3, 100px);
+}
+
+/* ... keep container, grid, and scoreboard ... */
+
+.cell {
+  width: 100px;
+  height: 100px;
+  background: none;
+  border: none;
+  font-size: 3.2rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  outline: none;
+  border-right: 2px solid #000;
+  border-bottom: 2px solid #000;
+  /* No transitions = zero lag */
+}
+
+.cell:nth-child(3n) {
+  border-right: none;
+}
+.cell:nth-child(n + 7) {
+  border-bottom: none;
+}
+
+/* Keep only the reset button and status styles */
+
+.fading-text {
+  opacity: 0.15;
+  transition: opacity 0.3s ease;
+}
+
+.reset-btn {
+  margin-top: 50px;
+  background: #000;
+  color: #fff;
+  border: none;
+  padding: 10px 30px;
+  cursor: pointer;
+  letter-spacing: 2px;
+  font-family: inherit;
+  font-size: 0.7rem;
+}
+
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background-color: #fff;
+  font-family: "Courier New", Courier, monospace;
+}
+
+.scoreboard {
+  font-size: 1.5rem;
+  font-weight: 900;
+  margin-bottom: 20px;
+  letter-spacing: 4px;
+}
+
+.red {
+  color: #ff0000;
+}
+.black {
+  color: #000;
+}
+.divider {
+  margin: 0 15px;
+  opacity: 0.2;
+}
+
+.status {
+  height: 20px;
+  margin-bottom: 40px;
+  font-weight: bold;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, 100px);
+  grid-template-rows: repeat(3, 100px);
+}
+
+.cell {
+  width: 100px;
+  height: 100px;
+  background: none;
+  border: none;
+  font-size: 3.5rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  outline: none;
+  /* Hashtag Lines */
+  border-right: 2px solid #000;
+  border-bottom: 2px solid #000;
+}
+
+.cell:nth-child(3n) {
+  border-right: none;
+}
+.cell:nth-child(n + 7) {
+  border-bottom: none;
+}
+
+.red-text {
+  color: #ff0000;
+}
+.black-text {
+  color: #000000;
+}
+
+/* The Shady Effect: Only for the mark about to vanish */
+.shady {
+  opacity: 0.2;
+  filter: blur(1px); /* Adds a nice "vanishing" feel */
+  transition: opacity 0.3s ease;
+}
+
+.reset-all {
+  margin-top: 60px;
+  background: none;
+  border: 1px solid #eee;
+  padding: 8px 20px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.7rem;
+  color: #ccc;
+}
+
+.reset-all:hover {
+  color: #000;
+  border-color: #000;
+}
