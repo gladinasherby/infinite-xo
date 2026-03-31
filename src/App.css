@@ -59,20 +59,21 @@ body {
   text-shadow: 0 0 8px #fff;
 }
 
-/* THE GRID - THE HOSTAGE (The Focus) */
 .grid {
   display: grid;
   grid-template-columns: repeat(3, min(28vw, 120px));
   grid-template-rows: repeat(3, min(28vw, 120px));
-  box-shadow: 0 0 20px rgba(0, 255, 255, 0.1);
-  background: rgba(255, 255, 255, 0.02);
+
+  background: transparent;
+  box-shadow: none;
+
   border-radius: 8px;
 }
 
 .cell {
   width: 100%;
   height: 100%;
-  background: none;
+  background: transparent; /* Ensure cells are also transparent */
   border: none;
   font-size: 4rem;
   display: flex;
@@ -80,11 +81,14 @@ body {
   align-items: center;
   cursor: pointer;
   outline: none;
-  /* Neon Grid Lines */
-  border-right: 1px solid rgba(0, 255, 255, 0.3);
-  border-bottom: 1px solid rgba(0, 255, 255, 0.3);
+
+  /* Adjusted Grid Lines: Subtle neon lines against the dark BG */
+  border-right: 1px solid rgba(0, 255, 255, 0.2);
+  border-bottom: 1px solid rgba(0, 255, 255, 0.2);
   position: relative;
 }
+
+/* ... keep your nth-child logic to hide outer borders ... */
 
 .cell:nth-child(3n) {
   border-right: none;
