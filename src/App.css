@@ -109,10 +109,27 @@ body {
 }
 
 /* Vanishing Effect */
+/* The Shady Effect: "Dying Neon" look before it vanishes */
+/* The Shady Effect: Rapidly malfunctioning neon */
 .shady {
-  opacity: 0.15;
-  filter: blur(3px);
-  transition: all 0.4s ease;
+  opacity: 0.8; /* Keep it relatively high so it's visible */
+  filter: grayscale(40%); /* Slightly drained of color */
+  animation: neon-flicker 0.15s infinite alternate; /* Fast, sharp blinking */
+  pointer-events: none; /* Ensure no one can click it while it's dying */
+}
+
+@keyframes neon-flicker {
+  0% {
+    opacity: 0.8;
+    text-shadow:
+      0 0 10px currentColor,
+      0 0 20px currentColor;
+  }
+  100% {
+    opacity: 0.2;
+    text-shadow: none; /* The "light" completely cuts out at 100% */
+    filter: blur(2px);
+  }
 }
 
 /* Minimized Reset Button */

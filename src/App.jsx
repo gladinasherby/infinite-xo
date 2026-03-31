@@ -41,7 +41,15 @@ export default function App() {
           particleCount: 150,
           spread: 70,
           origin: { y: 0.6 },
-          colors: winner === "X" ? ["#ff0000"] : ["#000000"],
+          // Using a palette of neon variations to simulate a "glow"
+          colors:
+            winner === "X"
+              ? ["#ff00ff", "#ff77ff", "#ff0088", "#ffffff"] // Neon Pink/Magenta Palette
+              : ["#00ffff", "#77ffff", "#00cccc", "#ffffff"], // Neon Cyan/Aqua Palette
+          ticks: 300,
+          gravity: 1.2,
+          scalar: 1.2,
+          shapes: ["circle"], // Circles look more like "light bokeh"
         });
 
         return {
