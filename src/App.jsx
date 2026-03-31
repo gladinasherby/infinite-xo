@@ -18,7 +18,7 @@ export default function App() {
       ...s,
       board: Array(9).fill(null),
       queues: { X: [], O: [] },
-      currentPlayer: "X",
+      currentPlayer: s.startingPlayer, // Use the stored starting player
       winner: null,
       isProcessing: false,
     }));
@@ -27,6 +27,7 @@ export default function App() {
   const applyMove = useCallback((index) => {
     setState((prev) => {
       if (prev.board[index] || prev.winner) return prev;
+
       const { nextBoard, nextQueues, winner } = simulateMove(
         prev.board,
         prev.queues,
@@ -36,20 +37,10 @@ export default function App() {
 
       if (winner) {
         const newScores = { ...prev.scores, [winner]: prev.scores[winner] + 1 };
-        // Trigger Confetti
+
+        // Neon Confetti Trigger...
         confetti({
-          particleCount: 150,
-          spread: 70,
-          origin: { y: 0.6 },
-          // Using a palette of neon variations to simulate a "glow"
-          colors:
-            winner === "X"
-              ? ["#ff00ff", "#ff77ff", "#ff0088", "#ffffff"] // Neon Pink/Magenta Palette
-              : ["#00ffff", "#77ffff", "#00cccc", "#ffffff"], // Neon Cyan/Aqua Palette
-          ticks: 300,
-          gravity: 1.2,
-          scalar: 1.2,
-          shapes: ["circle"], // Circles look more like "light bokeh"
+          /* ... your neon config ... */
         });
 
         return {
@@ -58,9 +49,11 @@ export default function App() {
           queues: nextQueues,
           winner,
           scores: newScores,
+          startingPlayer: winner, // SET THE WINNER AS THE STARTER FOR NEXT ROUND
         };
       }
 
+      // If no winner, just swap turns
       return {
         ...prev,
         board: nextBoard,
@@ -137,9 +130,14 @@ export default function App() {
 
       <button
         className="reset-all"
-        onClick={() =>
-          setState((s) => ({ ...s, scores: { X: 0, O: 0 } }), resetBoard())
-        }
+        onClick={() => {
+          setState((s) => ({
+            ...s,
+            scores: { X: 0, O: 0 },
+            startingPlayer: "X", // Reset starting preference
+          }));
+          resetBoard();
+        }}
       >
         RESET ALL
       </button>
