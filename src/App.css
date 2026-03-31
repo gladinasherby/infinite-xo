@@ -1,143 +1,89 @@
-.container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 100vh;
-  background-color: #fff;
-  font-family: "Courier New", Courier, monospace;
+:root {
+  --neon-pink: #ff00ff;
+  --neon-cyan: #00ffff;
+  --glow-shadow:
+    0 0 10px rgba(0, 255, 255, 0.5), 0 0 20px rgba(0, 255, 255, 0.2);
+  --bg-dark: #050505;
 }
 
-.scoreboard {
-  display: flex;
-  gap: 20px;
-  font-size: 1.2rem;
-  font-weight: bold;
-  margin-bottom: 20px;
-  letter-spacing: 3px;
-}
-
-.score-divider {
-  opacity: 0.3;
-}
-
-header {
-  margin-bottom: 30px;
-  text-align: center;
-}
-.status {
-  letter-spacing: 2px;
-  font-weight: bold;
-  height: 20px;
-  text-transform: uppercase;
-}
-
-.grid {
-  display: grid;
-  grid-template-columns: repeat(3, 100px);
-  grid-template-rows: repeat(3, 100px);
-}
-
-/* ... keep container, grid, and scoreboard ... */
-
-.cell {
-  width: 100px;
-  height: 100px;
-  background: none;
-  border: none;
-  font-size: 3.2rem;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  cursor: pointer;
-  outline: none;
-  border-right: 2px solid #000;
-  border-bottom: 2px solid #000;
-  /* No transitions = zero lag */
-}
-
-.cell:nth-child(3n) {
-  border-right: none;
-}
-.cell:nth-child(n + 7) {
-  border-bottom: none;
-}
-
-/* Keep only the reset button and status styles */
-
-.fading-text {
-  opacity: 0.15;
-  transition: opacity 0.3s ease;
-}
-
-.reset-btn {
-  margin-top: 50px;
-  background: #000;
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--bg-dark);
   color: #fff;
-  border: none;
-  padding: 10px 30px;
-  cursor: pointer;
-  letter-spacing: 2px;
-  font-family: inherit;
-  font-size: 0.7rem;
+  overflow: hidden; /* Prevents bounce scrolling on mobile */
 }
 
 .container {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  min-height: 100vh;
-  background-color: #fff;
+  justify-content: space-around; /* Distributes space better */
+  height: 100vh;
+  padding: 20px;
+  box-sizing: border-box;
   font-family: "Courier New", Courier, monospace;
 }
 
+/* Reduced Scoreboard */
 .scoreboard {
-  font-size: 1.5rem;
-  font-weight: 900;
-  margin-bottom: 20px;
-  letter-spacing: 4px;
+  font-size: 0.9rem;
+  font-weight: normal;
+  margin-top: 10px;
+  letter-spacing: 2px;
+  opacity: 0.7;
+  display: flex;
+  align-items: center;
 }
 
 .red {
-  color: #ff0000;
+  color: var(--neon-pink);
+  text-shadow: 0 0 5px var(--neon-pink);
 }
 .black {
-  color: #000;
+  color: var(--neon-cyan);
+  text-shadow: 0 0 5px var(--neon-cyan);
 }
 .divider {
-  margin: 0 15px;
-  opacity: 0.2;
+  margin: 0 10px;
+  opacity: 0.3;
 }
 
+/* Status Text */
 .status {
-  height: 20px;
-  margin-bottom: 40px;
-  font-weight: bold;
-  letter-spacing: 2px;
+  font-size: 1rem;
+  letter-spacing: 4px;
+  height: 24px;
+  margin: 10px 0;
   text-transform: uppercase;
+  text-shadow: 0 0 8px #fff;
 }
 
+/* THE GRID - THE HOSTAGE (The Focus) */
 .grid {
   display: grid;
-  grid-template-columns: repeat(3, 100px);
-  grid-template-rows: repeat(3, 100px);
+  grid-template-columns: repeat(3, min(28vw, 120px));
+  grid-template-rows: repeat(3, min(28vw, 120px));
+  box-shadow: 0 0 20px rgba(0, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 8px;
 }
 
 .cell {
-  width: 100px;
-  height: 100px;
+  width: 100%;
+  height: 100%;
   background: none;
   border: none;
-  font-size: 3.5rem;
+  font-size: 4rem;
   display: flex;
   justify-content: center;
   align-items: center;
   cursor: pointer;
   outline: none;
-  /* Hashtag Lines */
-  border-right: 2px solid #000;
-  border-bottom: 2px solid #000;
+  /* Neon Grid Lines */
+  border-right: 1px solid rgba(0, 255, 255, 0.3);
+  border-bottom: 1px solid rgba(0, 255, 255, 0.3);
+  position: relative;
 }
 
 .cell:nth-child(3n) {
@@ -147,64 +93,66 @@ header {
   border-bottom: none;
 }
 
+/* Mark Colors & Glows */
 .red-text {
-  color: #ff0000;
+  color: var(--neon-pink);
+  text-shadow:
+    0 0 15px var(--neon-pink),
+    0 0 30px var(--neon-pink);
 }
+
 .black-text {
-  color: #000000;
+  color: var(--neon-cyan);
+  text-shadow:
+    0 0 15px var(--neon-cyan),
+    0 0 30px var(--neon-cyan);
 }
 
-/* The Shady Effect: Only for the mark about to vanish */
+/* Vanishing Effect */
 .shady {
-  opacity: 0.2;
-  filter: blur(1px); /* Adds a nice "vanishing" feel */
-  transition: opacity 0.3s ease;
+  opacity: 0.15;
+  filter: blur(3px);
+  transition: all 0.4s ease;
 }
 
+/* Minimized Reset Button */
 .reset-all {
-  margin-top: 60px;
+  margin-bottom: 20px;
   background: none;
-  border: 1px solid #eee;
-  padding: 8px 20px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 6px 15px;
   cursor: pointer;
   font-family: inherit;
-  font-size: 0.7rem;
-  color: #ccc;
+  font-size: 0.6rem;
+  color: #444;
+  text-transform: uppercase;
+  transition: all 0.2s;
 }
 
 .reset-all:hover {
-  color: #000;
-  border-color: #000;
+  color: #fff;
+  border-color: #fff;
+  box-shadow: 0 0 10px #fff;
 }
 
-/* Mobile Responsiveness */
+/* Mobile Responsiveness - Focus on the Grid */
 @media screen and (max-width: 480px) {
-  .scoreboard {
-    font-size: 1.1rem; /* Slightly smaller text */
-    letter-spacing: 2px;
-    margin-bottom: 15px;
+  .container {
+    justify-content: space-between; /* Pushes score up, reset down */
+    padding: 40px 10px;
   }
 
   .grid {
-    /* Scale the cells down to 80px or 90px */
-    grid-template-columns: repeat(3, 85px);
-    grid-template-rows: repeat(3, 85px);
+    /* Ensures the grid takes up as much width as possible without breaking */
+    grid-template-columns: repeat(3, 30vw);
+    grid-template-rows: repeat(3, 30vw);
   }
 
   .cell {
-    width: 85px;
-    height: 85px;
-    font-size: 2.8rem; /* Scale font size with the box */
+    font-size: 3.5rem;
   }
 
   .status {
-    font-size: 0.8rem;
-    margin-bottom: 30px;
-  }
-
-  .reset-all {
-    margin-top: 40px;
-    padding: 12px 25px; /* Larger tap target for thumbs */
-    font-size: 0.8rem;
+    font-size: 0.9rem;
   }
 }
