@@ -1,79 +1,98 @@
+@import url("https://fonts.googleapis.com/css2?family=Indie+Flower&family=Architects+Daughter&display=swap");
+
 :root {
-  --neon-pink: #ff00ff;
-  --neon-cyan: #00ffff;
-  --glow-shadow:
-    0 0 10px rgba(0, 255, 255, 0.5), 0 0 20px rgba(0, 255, 255, 0.2);
-  --bg-dark: #050505;
+  --pencil-color: #2b2b2b;
+  --graph-line: rgba(0, 0, 150, 0.1);
+  --bg-paper: #fdfaf3; /* Creamy paper color */
 }
 
 body {
   margin: 0;
   padding: 0;
-  background-color: var(--bg-dark);
-  color: #fff;
-  overflow: hidden; /* Prevents bounce scrolling on mobile */
+  /* Paper Texture & Graph Paper Pattern */
+  background-color: var(--bg-paper);
+  background-image:
+    linear-gradient(var(--graph-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--graph-line) 1px, transparent 1px);
+  background-size: 30px 30px;
+  color: var(--pencil-color);
+  font-family: "Architects Daughter", cursive;
+  overflow: hidden;
 }
 
 .container {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: space-around; /* Distributes space better */
+  justify-content: space-around;
   height: 100vh;
   padding: 20px;
   box-sizing: border-box;
-  font-family: "Courier New", Courier, monospace;
 }
 
-/* Reduced Scoreboard */
-.scoreboard {
-  font-size: 0.9rem;
-  font-weight: normal;
-  margin-top: 10px;
-  letter-spacing: 2px;
-  opacity: 0.7;
-  display: flex;
-  align-items: center;
-}
-
-.red {
-  color: var(--neon-pink);
-  text-shadow: 0 0 5px var(--neon-pink);
-}
-.black {
-  color: var(--neon-cyan);
-  text-shadow: 0 0 5px var(--neon-cyan);
-}
-.divider {
-  margin: 0 10px;
-  opacity: 0.3;
-}
-
-/* Status Text */
-.status {
-  font-size: 1rem;
-  letter-spacing: 4px;
-  height: 24px;
-  margin: 10px 0;
-  text-transform: uppercase;
-  text-shadow: 0 0 8px #fff;
-}
-
+/* Sketchy Grid */
 .grid {
   display: grid;
   grid-template-columns: repeat(3, min(28vw, 120px));
   grid-template-rows: repeat(3, min(28vw, 120px));
+  position: relative;
+  /* We remove all background/border from here */
+}
 
-  background: transparent;
-  box-shadow: none;
+/* Vertical Pencil Strokes */
+.grid::before {
+  content: "";
+  position: absolute;
+  top: 5%;
+  bottom: 5%;
+  left: 33.3%;
+  width: 3px;
+  background: var(--pencil-color);
+  /* The "shaky" pencil effect */
+  border-radius: 50% 50% 40% 60% / 40% 60% 50% 50%;
+  transform: rotate(0.5deg);
+  /* Use box-shadow to draw the second parallel vertical line */
+  box-shadow: calc(min(28vw, 120px) + 3px) 0 0 0 var(--pencil-color);
+  opacity: 0.8;
+  z-index: 1;
+}
 
-  border-radius: 8px;
+/* Horizontal Pencil Strokes */
+.grid::after {
+  content: "";
+  position: absolute;
+  left: 5%;
+  right: 5%;
+  top: 33.3%;
+  height: 3px;
+  background: var(--pencil-color);
+  /* The "shaky" pencil effect */
+  border-radius: 40% 60% 50% 50% / 50% 40% 60% 50%;
+  transform: rotate(-0.8deg);
+  /* Use box-shadow to draw the second parallel horizontal line */
+  box-shadow: 0 calc(min(28vw, 120px) + 3px) 0 0 var(--pencil-color);
+  opacity: 0.8;
+  z-index: 1;
 }
 
 .cell {
   width: 100%;
   height: 100%;
-  background: transparent; /* Ensure cells are also transparent */
+  background: transparent;
+  border: none; /* IMPORTANT: This kills those boxes in your screenshot */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  outline: none;
+  position: relative;
+  z-index: 2; /* Keeps marks and clicks above the lines */
+}
+
+/* .cell {
+  width: 100%;
+  height: 100%;
+  background: transparent;
   border: none;
   font-size: 4rem;
   display: flex;
@@ -81,14 +100,18 @@ body {
   align-items: center;
   cursor: pointer;
   outline: none;
+  font-family: "Indie Flower", cursive;
 
-  /* Adjusted Grid Lines: Subtle neon lines against the dark BG */
-  border-right: 1px solid rgba(0, 255, 255, 0.2);
-  border-bottom: 1px solid rgba(0, 255, 255, 0.2);
-  position: relative;
-}
+  
+  border-right: 3px solid var(--pencil-color);
+  border-bottom: 2px solid var(--pencil-color);
+  border-radius: 255px 15px 225px 15px / 15px 225px 15px 255px;
+} */
 
-/* ... keep your nth-child logic to hide outer borders ... */
+.cell svg {
+  filter: drop-shadow(1px 1px 1px rgba(0, 0, 0, 0.1));
+  transform: rotate(calc(var(--uid) * 1deg));
+} /* Slight random rotation per mark */
 
 .cell:nth-child(3n) {
   border-right: none;
@@ -97,83 +120,146 @@ body {
   border-bottom: none;
 }
 
-/* Mark Colors & Glows */
-.red-text {
-  color: var(--neon-pink);
-  text-shadow:
-    0 0 15px var(--neon-pink),
-    0 0 30px var(--neon-pink);
+/* Pencil Drawing Animation */
+.red-text span,
+.black-text span {
+  position: relative;
+  display: inline-block;
+  color: transparent;
+  -webkit-text-stroke: 1.5px var(--pencil-color);
+
+  background: linear-gradient(var(--pencil-color), var(--pencil-color));
+  background-size: 0% 100%;
+  background-repeat: no-repeat;
+  background-clip: text;
+  -webkit-background-clip: text;
+
+  animation:
+    draw-fill 0.4s ease-out forwards,
+    jitter 0.3s ease-in-out;
 }
 
-.black-text {
-  color: var(--neon-cyan);
-  text-shadow:
-    0 0 15px var(--neon-cyan),
-    0 0 30px var(--neon-cyan);
+.draw {
+  display: inline-block;
+}
+/* Drawing effect */
+@keyframes draw-fill {
+  to {
+    background-size: 100% 100%;
+  }
 }
 
-/* Vanishing Effect */
-/* The Shady Effect: "Dying Neon" look before it vanishes */
-/* The Shady Effect: Rapidly malfunctioning neon */
-.shady {
-  opacity: 0.8; /* Keep it relatively high so it's visible */
-  filter: grayscale(40%); /* Slightly drained of color */
-  animation: neon-flicker 0.15s infinite alternate; /* Fast, sharp blinking */
-  pointer-events: none; /* Ensure no one can click it while it's dying */
-}
-
-@keyframes neon-flicker {
+/* Hand movement */
+@keyframes jitter {
   0% {
-    opacity: 0.8;
-    text-shadow:
-      0 0 10px currentColor,
-      0 0 20px currentColor;
+    transform: translate(0px, 0px) rotate(-4deg);
+  }
+  25% {
+    transform: translate(1px, -1px) rotate(-2deg);
+  }
+  50% {
+    transform: translate(-1px, 1px) rotate(-5deg);
+  }
+  75% {
+    transform: translate(1px, 1px) rotate(-2deg);
   }
   100% {
-    opacity: 0.2;
-    text-shadow: none; /* The "light" completely cuts out at 100% */
-    filter: blur(2px);
+    transform: translate(0px, 0px) rotate(-3deg);
   }
 }
 
-/* Minimized Reset Button */
+/* Different rotations so they don't look identical */
+.cell:nth-child(even) .red-text {
+  transform: rotate(3deg);
+}
+
+@keyframes draw-pencil {
+  0% {
+    clip-path: inset(0 100% 0 0); /* Start hidden from right */
+    transform: scale(0.9) rotate(-10deg);
+  }
+  100% {
+    clip-path: inset(0 0 0 0); /* Reveal full character */
+    transform: scale(1) rotate(-2deg);
+  }
+}
+
+/* The Vanishing/Shady Effect (Erasing look) */
+.shady {
+  animation: erasing 0.6s linear infinite alternate;
+  filter: blur(1px);
+  opacity: 0.4;
+}
+
+@keyframes erasing {
+  0% {
+    transform: translateX(-2px) skewX(2deg);
+  }
+  100% {
+    transform: translateX(2px) skewX(-2deg);
+  }
+}
+
+/* Scoreboard & Button */
+.scoreboard {
+  font-size: 1.2rem;
+  opacity: 0.8;
+}
+.status {
+  font-size: 1.2rem;
+  margin: 10px 0;
+}
+
 .reset-all {
-  margin-bottom: 20px;
-  background: none;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  padding: 6px 15px;
-  cursor: pointer;
+  background: white;
+  border: 2px solid var(--pencil-color);
+  padding: 8px 20px;
+  border-radius: 50% 20% 50% 20% / 20% 50% 20% 50%; /* Sketchy button */
   font-family: inherit;
-  font-size: 0.6rem;
-  color: #444;
-  text-transform: uppercase;
-  transition: all 0.2s;
+  cursor: pointer;
+  box-shadow: 2px 2px 0px var(--pencil-color);
 }
 
 .reset-all:hover {
-  color: #fff;
-  border-color: #fff;
-  box-shadow: 0 0 10px #fff;
+  transform: translate(-1px, -1px);
+  box-shadow: 3px 3px 0px var(--pencil-color);
 }
 
-/* Mobile Responsiveness - Focus on the Grid */
-@media screen and (max-width: 480px) {
-  .container {
-    justify-content: space-between; /* Pushes score up, reset down */
-    padding: 40px 10px;
+@keyframes draw-on {
+  from {
+    stroke-dashoffset: 172; /* Match the length in your SVG style */
   }
-
-  .grid {
-    /* Ensures the grid takes up as much width as possible without breaking */
-    grid-template-columns: repeat(3, 30vw);
-    grid-template-rows: repeat(3, 30vw);
+  to {
+    stroke-dashoffset: 0;
   }
+}
 
-  .cell {
-    font-size: 3.5rem;
-  }
+/* Ensure the SVG doesn't disappear/flicker after animation */
+path {
+  stroke-dashoffset: 0;
+  stroke-dasharray: 172; /* Max length used in your O */
+}
 
-  .status {
-    font-size: 0.9rem;
+.strike-line-svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none; /* Crucial: clicks must go through it */
+  z-index: 10;
+}
+
+.strike-path {
+  /* We use a large number to ensure it covers the diagonal too */
+  stroke-dasharray: 200;
+  stroke-dashoffset: 200;
+  animation: draw-strike 0.4s ease-out forwards;
+  opacity: 0.8;
+}
+
+@keyframes draw-strike {
+  to {
+    stroke-dashoffset: 0;
   }
 }

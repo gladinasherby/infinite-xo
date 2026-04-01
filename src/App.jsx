@@ -2,25 +2,45 @@ import React, { useState, useEffect, useCallback } from "react";
 import confetti from "canvas-confetti";
 import { simulateMove, getBestMove } from "./logic/gameLogic";
 import "./App.css";
-
+import { DrawnX, DrawnO } from "./components/Drawnmark";
+import { StrikeLine } from "./components/StrikeLine";
 export default function App() {
   const [state, setState] = useState({
-    board: Array(9).fill(null),
+    board: Array(9).fill(null), // Stores objects: { char: "X", id: 101 }
     queues: { X: [], O: [] },
     currentPlayer: "X",
     winner: null,
+    winningLine: null,
     isProcessing: false,
     scores: { X: 0, O: 0 },
+    moveCount: 0,
+    startingPlayer: "X",
   });
+
+  const GRID_PENCIL_FILTER = () => (
+    <defs>
+      <filter id="pencil-grid" x="-10%" y="-10%" width="120%" height="120%">
+        <feTurbulence
+          type="fractalNoise"
+          baseFrequency="0.05"
+          numOctaves="3"
+          seed="5"
+        />
+        <feDisplacementMap in="SourceGraphic" scale="2" />
+      </filter>
+    </defs>
+  );
 
   const resetBoard = useCallback(() => {
     setState((s) => ({
       ...s,
       board: Array(9).fill(null),
       queues: { X: [], O: [] },
-      currentPlayer: s.startingPlayer, // Use the stored starting player
+      currentPlayer: s.startingPlayer,
       winner: null,
+      winningLine: null, // <--- Reset this!
       isProcessing: false,
+      moveCount: 0,
     }));
   }, []);
 
@@ -28,61 +48,74 @@ export default function App() {
     setState((prev) => {
       if (prev.board[index] || prev.winner) return prev;
 
-      const { nextBoard, nextQueues, winner } = simulateMove(
-        prev.board,
+      const logicBoard = prev.board.map((cell) => (cell ? cell.char : null));
+
+      // Ensure your simulateMove returns { nextBoard, nextQueues, winner, winningLine }
+      const { nextBoard, nextQueues, winner, winningLine } = simulateMove(
+        logicBoard,
         prev.queues,
         prev.currentPlayer,
         index,
       );
 
+      const newMoveCount = prev.moveCount + 1;
+      const updatedBoard = nextBoard.map((char, i) => {
+        if (!char) return null;
+        if (i === index) return { char, id: newMoveCount };
+        return prev.board[i];
+      });
+
       if (winner) {
         const newScores = { ...prev.scores, [winner]: prev.scores[winner] + 1 };
 
-        // Neon Confetti Trigger...
         confetti({
-          /* ... your neon config ... */
+          /* ... your config ... */
         });
 
         return {
           ...prev,
-          board: nextBoard,
+          board: updatedBoard,
           queues: nextQueues,
           winner,
+          winningLine, // <--- Save the [a, b, c] indices here
           scores: newScores,
-          startingPlayer: winner, // SET THE WINNER AS THE STARTER FOR NEXT ROUND
+          moveCount: newMoveCount,
+          startingPlayer: winner,
         };
       }
 
-      // If no winner, just swap turns
       return {
         ...prev,
-        board: nextBoard,
+        board: updatedBoard,
         queues: nextQueues,
+        moveCount: newMoveCount,
         currentPlayer: prev.currentPlayer === "X" ? "O" : "X",
         isProcessing: false,
       };
     });
   }, []);
 
-  // Auto-Restart
-  useEffect(() => {
-    if (state.winner) {
-      const t = setTimeout(resetBoard, 1500);
-      return () => clearTimeout(t);
-    }
-  }, [state.winner, resetBoard]);
-
-  // AI Turn
+  // AI Turn Logic
   useEffect(() => {
     if (state.currentPlayer === "O" && !state.winner) {
       setState((s) => ({ ...s, isProcessing: true }));
       const t = setTimeout(() => {
-        const move = getBestMove(state.board, state.queues);
+        // Pass the simplified board to the AI logic
+        const logicBoard = state.board.map((cell) => (cell ? cell.char : null));
+        const move = getBestMove(logicBoard, state.queues);
         if (move !== undefined) applyMove(move);
-      }, 500);
+      }, 700);
       return () => clearTimeout(t);
     }
   }, [state.currentPlayer, state.winner, state.board, state.queues, applyMove]);
+
+  // Auto-reset on win
+  useEffect(() => {
+    if (state.winner) {
+      const t = setTimeout(resetBoard, 2000);
+      return () => clearTimeout(t);
+    }
+  }, [state.winner, resetBoard]);
 
   return (
     <div className="container">
@@ -96,33 +129,41 @@ export default function App() {
         {state.winner
           ? `${state.winner} WINS!`
           : state.isProcessing
-            ? "AI THINKING..."
+            ? "AI WRITING..."
             : "YOUR TURN"}
       </p>
 
       <div className="grid">
+        {state.winner && state.winningLine && (
+          <StrikeLine indices={state.winningLine} />
+        )}
         {state.board.map((cell, i) => {
-          // Identify the oldest mark to shade it
+          // Shading logic: check if this index is at the front of the removal queue
           const isOldest =
             !state.winner &&
-            ((state.queues.X.length === 2 &&
-              state.queues.X[0] === i &&
-              state.currentPlayer === "X") ||
-              (state.queues.O.length === 2 &&
-                state.queues.O[0] === i &&
-                state.currentPlayer === "O"));
+            ((state.queues.X.length === 3 && state.queues.X[0] === i) ||
+              (state.queues.O.length === 3 && state.queues.O[0] === i));
+
+          // Use the UNIQUE ID stored in the cell object as the key
+          // This prevents re-animation of existing marks!
+          const markId = cell ? cell.id : `empty-${i}`;
 
           return (
             <button
               key={i}
-              className={`cell ${cell === "X" ? "red-text" : "black-text"}`}
+              className="cell"
               onClick={() =>
                 state.currentPlayer === "X" &&
                 !state.isProcessing &&
                 applyMove(i)
               }
             >
-              <span className={isOldest ? "shady" : ""}>{cell}</span>
+              {cell?.char === "X" && (
+                <DrawnX key={markId} uid={markId} shady={isOldest} />
+              )}
+              {cell?.char === "O" && (
+                <DrawnO key={markId} uid={markId} shady={isOldest} />
+              )}
             </button>
           );
         })}
@@ -134,12 +175,12 @@ export default function App() {
           setState((s) => ({
             ...s,
             scores: { X: 0, O: 0 },
-            startingPlayer: "X", // Reset starting preference
+            startingPlayer: "X",
           }));
           resetBoard();
         }}
       >
-        RESET ALL
+        CLEAR PAGE
       </button>
     </div>
   );
