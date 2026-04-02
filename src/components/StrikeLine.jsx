@@ -1,6 +1,7 @@
 import React from "react";
 
 export function StrikeLine({ indices }) {
+  console.log("🎯 StrikeLine called!", indices);
   if (!indices || indices.length < 3) return null;
 
   // We map the grid index (0-8) to percentage coordinates (x, y)
@@ -24,29 +25,40 @@ export function StrikeLine({ indices }) {
     <svg
       className="strike-line-svg"
       viewBox="0 0 100 100"
-      preserveAspectRatio="none"
+      preserveAspectRatio="xMidYMid meet"
     >
-      <defs>
-        <filter id="pencil-strike">
+      {/* <defs>
+        <filter id="pencil-strike" x="-20%" y="-20%" width="140%" height="140%">
           <feTurbulence
             type="fractalNoise"
-            baseFrequency="0.05"
+            baseFrequency="0.065"
             numOctaves="3"
-            seed="13"
+            seed={13}
+            result="noise"
           />
-          <feDisplacementMap in="SourceGraphic" scale="2.5" />
+          <feDisplacementMap
+            in="SourceGraphic"
+            in2="noise"
+            scale="0.8"
+            xChannelSelector="R"
+            yChannelSelector="G"
+          />
         </filter>
-      </defs>
+      </defs> */}
       <line
-        x1={`${start.x}%`}
-        y1={`${start.y}%`}
-        x2={`${end.x}%`}
-        y2={`${end.y}%`}
-        stroke="#2b2b2b"
-        strokeWidth="2"
+        x1={start.x}
+        y1={start.y}
+        x2={end.x}
+        y2={end.y}
+        stroke="#b91c1c"
+        strokeWidth="3"
         strokeLinecap="round"
-        filter="url(#pencil-strike)"
-        className="strike-path"
+        style={{
+          strokeDasharray: 200,
+          strokeDashoffset: 200,
+          animation: "draw-strike 0.4s ease-out forwards",
+          opacity: 0.85,
+        }}
       />
     </svg>
   );

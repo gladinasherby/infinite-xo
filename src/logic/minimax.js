@@ -13,9 +13,9 @@ export const checkWin = (board) => {
   for (let line of WINNING_LINES) {
     const [a, b, c] = line;
     if (board[a] && board[a] === board[b] && board[a] === board[c])
-      return board[a];
+      return { winner: board[a], winningLine: line }; // ← return object
   }
-  return null;
+  return { winner: null, winningLine: null };
 };
 
 export const simulateMove = (board, queues, player, moveIndex) => {
@@ -23,17 +23,17 @@ export const simulateMove = (board, queues, player, moveIndex) => {
   const nextQueues = { X: [...queues.X], O: [...queues.O] };
   nextBoard[moveIndex] = player;
 
-  const winner = checkWin(nextBoard);
+  const { winner, winningLine } = checkWin(nextBoard); // ← destructure
   if (!winner && nextQueues[player].length === 2) {
     const oldest = nextQueues[player].shift();
     nextBoard[oldest] = null;
   }
   nextQueues[player].push(moveIndex);
-  return { nextBoard, nextQueues, winner };
+  return { nextBoard, nextQueues, winner, winningLine }; // ← pass through
 };
 
 export const minimax = (board, queues, depth, maxDepth, isMax, alpha, beta) => {
-  const winner = checkWin(board);
+  const { winner } = checkWin(board);
   if (winner === "O") return 10 - depth;
   if (winner === "X") return depth - 10;
   if (depth >= maxDepth) return 0;

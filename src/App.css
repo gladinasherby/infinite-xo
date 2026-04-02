@@ -234,11 +234,22 @@ body {
   }
 }
 
-/* Ensure the SVG doesn't disappear/flicker after animation */
+/* Put this back exactly as original */
 path {
   stroke-dashoffset: 0;
-  stroke-dasharray: 172; /* Max length used in your O */
+  stroke-dasharray: 172;
 }
+/* Ensure the SVG doesn't disappear/flicker after animation */
+/* This is nuking your strike animation! */
+/* .cell path {
+  stroke-dashoffset: 0;
+  stroke-dasharray: 172;
+} */
+
+/* .drawn-mark path {
+  stroke-dashoffset: 0;
+  stroke-dasharray: 172;
+} */
 
 .strike-line-svg {
   position: absolute;
@@ -255,7 +266,6 @@ path {
   stroke-dasharray: 200;
   stroke-dashoffset: 200;
   animation: draw-strike 0.4s ease-out forwards;
-  opacity: 0.8;
 }
 
 @keyframes draw-strike {

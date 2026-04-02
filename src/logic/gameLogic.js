@@ -15,22 +15,26 @@ export const checkWin = (board) => {
   for (let line of WINNING_LINES) {
     const [a, b, c] = line;
     if (board[a] && board[a] === board[b] && board[a] === board[c])
-      return board[a];
+      return { winner: board[a], winningLine: line };
   }
-  return null;
+  return { winner: null, winningLine: null };
 };
 
 export const simulateMove = (board, queues, player, moveIndex) => {
   const nextBoard = [...board];
   const nextQueues = { X: [...queues.X], O: [...queues.O] };
   nextBoard[moveIndex] = player;
-  const winner = checkWin(nextBoard);
+
+  const { winner, winningLine } = checkWin(nextBoard);
+
   if (!winner && nextQueues[player].length === 2) {
+    // ← only removes if NO winner
     const oldest = nextQueues[player].shift();
     nextBoard[oldest] = null;
   }
   nextQueues[player].push(moveIndex);
-  return { nextBoard, nextQueues, winner };
+
+  return { nextBoard, nextQueues, winner, winningLine };
 };
 
 // --- MAKE SURE THIS IS EXPORTED ---
@@ -63,7 +67,7 @@ export const getBestMove = (board, queues) => {
 };
 
 function minimax(board, queues, depth, maxDepth, isMax, alpha, beta) {
-  const winner = checkWin(board);
+  const { winner } = checkWin(board);
   if (winner === "O") return 10 - depth;
   if (winner === "X") return depth - 10;
   if (depth >= maxDepth) return 0;

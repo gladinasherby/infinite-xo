@@ -16,7 +16,14 @@ export default function App() {
     moveCount: 0,
     startingPlayer: "X",
   });
-
+  useEffect(() => {
+    console.log(
+      "state.winner:",
+      state.winner,
+      "state.winningLine:",
+      state.winningLine,
+    );
+  }, [state.winner, state.winningLine]);
   const GRID_PENCIL_FILTER = () => (
     <defs>
       <filter id="pencil-grid" x="-10%" y="-10%" width="120%" height="120%">
@@ -57,6 +64,7 @@ export default function App() {
         prev.currentPlayer,
         index,
       );
+      console.log("winner:", winner, "winningLine:", winningLine);
 
       const newMoveCount = prev.moveCount + 1;
       const updatedBoard = nextBoard.map((char, i) => {
@@ -112,7 +120,7 @@ export default function App() {
   // Auto-reset on win
   useEffect(() => {
     if (state.winner) {
-      const t = setTimeout(resetBoard, 2000);
+      const t = setTimeout(resetBoard, 4000);
       return () => clearTimeout(t);
     }
   }, [state.winner, resetBoard]);
@@ -135,7 +143,10 @@ export default function App() {
 
       <div className="grid">
         {state.winner && state.winningLine && (
-          <StrikeLine indices={state.winningLine} />
+          <StrikeLine
+            key={`${state.scores.X}-${state.scores.O}`}
+            indices={state.winningLine}
+          />
         )}
         {state.board.map((cell, i) => {
           // Shading logic: check if this index is at the front of the removal queue
