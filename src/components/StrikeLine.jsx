@@ -16,29 +16,15 @@ export function StrikeLine({ indices }) {
   const p1 = points[indices[0]];
   const p2 = points[indices[2]];
 
-  // --- THE EXTENSION MATH ---
-  const overshoot = 8; // Increase this number to make the line longer
-
-  // Calculate the angle of the line
+  const overshoot = 8;
   const dx = p2.x - p1.x;
   const dy = p2.y - p1.y;
   const length = Math.sqrt(dx * dx + dy * dy);
-
-  // Normalized direction vectors
   const ux = dx / length;
   const uy = dy / length;
 
-  // New start and end points pushed outward
-  const start = {
-    x: p1.x - ux * overshoot,
-    y: p1.y - uy * overshoot,
-  };
-  const end = {
-    x: p2.x + ux * overshoot,
-    y: p2.y + uy * overshoot,
-  };
-
-  // Slight random "wobble" for the mid-point to keep it looking hand-drawn
+  const start = { x: p1.x - ux * overshoot, y: p1.y - uy * overshoot };
+  const end = { x: p2.x + ux * overshoot, y: p2.y + uy * overshoot };
   const mid = {
     x: (start.x + end.x) / 2 + (Math.random() - 0.5) * 2,
     y: (start.y + end.y) / 2 + (Math.random() - 0.5) * 2,
@@ -46,12 +32,18 @@ export function StrikeLine({ indices }) {
 
   const pathData = `M ${start.x} ${start.y} Q ${mid.x} ${mid.y} ${end.x} ${end.y}`;
 
+  // Diagonal gets longer dash + rougher pencil texture (intentional difference!)
+  const isDiagonal = dx !== 0 && dy !== 0;
+  const dashLength = isDiagonal ? 450 : 300;
+  const baseFrequency = isDiagonal ? "0.08" : "0.5";
+  const displaceScale = isDiagonal ? "2.5" : "0.8";
+
   return (
     <svg
       viewBox="0 0 100 100"
       style={{
         position: "absolute",
-        inset: -10, // Added some bleed area
+        inset: -10,
         pointerEvents: "none",
         overflow: "visible",
         width: "calc(100% + 20px)",
@@ -62,11 +54,15 @@ export function StrikeLine({ indices }) {
         <filter id="pencil" x="-20%" y="-20%" width="140%" height="140%">
           <feTurbulence
             type="fractalNoise"
-            baseFrequency="0.5"
+            baseFrequency={baseFrequency}
             numOctaves="4"
             result="noise"
           />
-          <feDisplacementMap in="SourceGraphic" in2="noise" scale="1.5" />
+          <feDisplacementMap
+            in="SourceGraphic"
+            in2="noise"
+            scale={displaceScale}
+          />
         </filter>
       </defs>
 
@@ -74,12 +70,13 @@ export function StrikeLine({ indices }) {
         d={pathData}
         fill="none"
         stroke="#000000"
-        strokeWidth="8"
+        strokeWidth="2.5"
         strokeLinecap="round"
         filter="url(#pencil)"
+        vectorEffect="non-scaling-stroke"
         style={{
-          strokeDasharray: 300, // Increased to accommodate longer line
-          strokeDashoffset: 300,
+          strokeDasharray: dashLength,
+          strokeDashoffset: dashLength,
           animation: "draw-strike 0.5s ease-out forwards",
         }}
       />
