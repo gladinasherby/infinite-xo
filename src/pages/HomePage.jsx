@@ -248,7 +248,7 @@ export default function HomePage({ onPlay }) {
           <br />
           TOE
         </h1> */}
-        <p className="home-tagline">vanishing marks</p>
+        <p className="home-tagline">Infinite XO</p>
 
         <div className="home-buttons">
           <button
