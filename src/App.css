@@ -273,3 +273,8 @@ path {
     stroke-dashoffset: 0;
   }
 }
+
+.cell,
+.reset-all {
+  -webkit-tap-highlight-color: transparent;
+}
