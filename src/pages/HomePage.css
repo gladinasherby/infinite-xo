@@ -1,0 +1,141 @@
+/* ── Root ──────────────────────────────────────────────────── */
+.home-root {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  background: var(--bg, #fdf8f2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: inherit;
+}
+
+/* ── Ghost background — fills entire viewport ─────────────── */
+.ghost-bg {
+  position: absolute;
+  inset: 0;
+  color: var(--pencil-color, #1a1a1a);
+  pointer-events: none;
+  transform: rotate(-10deg) scale(1.2) translate(-14px, -10px);
+  transform-origin: center center;
+
+  -webkit-mask-image: radial-gradient(
+    ellipse 45% 50% at 50% 50%,
+    transparent 40%,
+    black 100%
+  );
+  mask-image: radial-gradient(
+    ellipse 45% 50% at 50% 50%,
+    transparent 20%,
+    black 90%
+  );
+}
+.ghost-cell {
+  position: absolute;
+  opacity: 0.22;
+}
+
+/* ── Centered foreground UI ───────────────────────────────── */
+.home-ui {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  text-align: center;
+}
+
+/* no backdrop — let the ghost games show through clearly */
+
+/* ── Title ────────────────────────────────────────────────── */
+.home-title {
+  font-family: inherit;
+  font-size: clamp(3rem, 9vw, 5.5rem);
+  line-height: 1.05;
+  letter-spacing: 0.14em;
+  color: var(--pencil-color, #1a1a1a);
+  margin: 0;
+  animation: fadeUp 0.6s ease both;
+}
+
+.home-tagline {
+  font-size: 2rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--pencil-color, #1a1a1a);
+  opacity: 0.8;
+  margin: 0 0 20px;
+  animation: fadeUp 0.6s 0.1s ease both;
+}
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ── Buttons ──────────────────────────────────────────────── */
+.home-buttons {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+
+.sketchy-btn {
+  background: white;
+  border: 2px solid var(--pencil-color, #1a1a1a);
+  padding: 10px 32px;
+  border-radius: 50% 20% 50% 20% / 20% 50% 20% 50%;
+  font-family: inherit;
+  font-size: 0.9rem;
+  letter-spacing: 0.13em;
+  cursor: pointer;
+  box-shadow: 2px 2px 0px var(--pencil-color, #1a1a1a);
+  color: var(--pencil-color, #1a1a1a);
+  min-width: 190px;
+  transition:
+    transform 0.12s ease,
+    box-shadow 0.12s ease,
+    border-radius 0.35s ease;
+  animation: fadeUp 0.5s ease both;
+}
+
+.home-buttons .sketchy-btn:nth-child(1) {
+  animation-delay: 0.22s;
+}
+.home-buttons .sketchy-btn:nth-child(2) {
+  animation-delay: 0.34s;
+}
+.home-buttons .sketchy-btn:nth-child(3) {
+  animation-delay: 0.46s;
+}
+
+.sketchy-btn:hover {
+  border-radius: 20% 50% 20% 50% / 50% 20% 50% 20%;
+  box-shadow: 3px 3px 0px var(--pencil-color, #1a1a1a);
+  transform: translate(-1px, -1px);
+}
+
+.sketchy-btn:active {
+  transform: translate(1px, 1px);
+  box-shadow: 1px 1px 0px var(--pencil-color, #1a1a1a);
+}
+
+.play-btn {
+  font-size: 1.05rem;
+  letter-spacing: 0.22em;
+  padding: 12px 40px;
+  border-width: 2.5px;
+  box-shadow: 3px 3px 0px var(--pencil-color, #1a1a1a);
+}
+
+.play-btn:hover {
+  box-shadow: 4px 4px 0px var(--pencil-color, #1a1a1a);
+}
