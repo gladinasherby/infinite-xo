@@ -32,11 +32,9 @@ export function StrikeLine({ indices }) {
 
   const pathData = `M ${start.x} ${start.y} Q ${mid.x} ${mid.y} ${end.x} ${end.y}`;
 
-  // Diagonal gets longer dash + rougher pencil texture (intentional difference!)
+  // ✅ Only change: diagonal gets a longer dash budget
   const isDiagonal = dx !== 0 && dy !== 0;
   const dashLength = isDiagonal ? 450 : 300;
-  const baseFrequency = isDiagonal ? "0.08" : "0.5";
-  const displaceScale = isDiagonal ? "2.5" : "0.8";
 
   return (
     <svg
@@ -54,18 +52,13 @@ export function StrikeLine({ indices }) {
         <filter id="pencil" x="-20%" y="-20%" width="140%" height="140%">
           <feTurbulence
             type="fractalNoise"
-            baseFrequency={baseFrequency}
+            baseFrequency="0.5"
             numOctaves="4"
             result="noise"
           />
-          <feDisplacementMap
-            in="SourceGraphic"
-            in2="noise"
-            scale={displaceScale}
-          />
+          <feDisplacementMap in="SourceGraphic" in2="noise" scale="0.8" />
         </filter>
       </defs>
-
       <path
         d={pathData}
         fill="none"
