@@ -21,9 +21,7 @@ export default function GamePage({ onHome }) {
     startingPlayer: "X",
   });
 
-  const [drawingCell, setDrawingCell] = useState(null);
   const [cellSize, setCellSize] = useState(120);
-  // Map of cell index -> stroke data for draw mode X marks
   const [inkStrokes, setInkStrokes] = useState({});
   const gridRef = useRef(null);
 
@@ -36,7 +34,6 @@ export default function GamePage({ onHome }) {
   });
 
   const resetBoard = useCallback(() => {
-    setDrawingCell(null);
     setInkStrokes({});
     setState((s) => ({
       ...s,
@@ -174,23 +171,18 @@ export default function GamePage({ onHome }) {
             !state.winner &&
             (mode === "vs-human" || state.currentPlayer === "X");
 
+          // In draw mode, canvas is live on every empty cell — no click to activate
+          const showDrawCanvas = isMyDrawTurn && !cell;
+
           return (
             <button
               key={i}
               className="cell"
-              style={{
-                position: "relative",
-                cursor: isMyDrawTurn && !cell ? "crosshair" : undefined,
-              }}
+              style={{ position: "relative" }}
               onClick={() => {
-                if (isMyDrawTurn && !cell && drawingCell === null) {
-                  setDrawingCell(i);
-                  return;
-                }
                 if (!isDrawMode && clickable) applyMove(i);
               }}
             >
-              {/* In draw mode: show the user's actual ink for X marks */}
               {isDrawMode && cell?.char === "X" && inkStrokes[i] ? (
                 <DrawnInkX
                   strokes={inkStrokes[i]}
@@ -207,17 +199,15 @@ export default function GamePage({ onHome }) {
                 <DrawnO key={markId} uid={markId} shady={isOldest} />
               )}
 
-              {/* Live drawing canvas — shown only on the active cell */}
-              {isDrawMode && drawingCell === i && (
+              {/* Canvas is always mounted on empty cells during X's draw turn */}
+              {showDrawCanvas && (
                 <DrawCanvas
                   cellSize={cellSize}
                   onConfirm={(strokes) => {
-                    // Save the raw ink strokes for this cell
                     setInkStrokes((prev) => ({ ...prev, [i]: strokes }));
-                    setDrawingCell(null);
                     applyMove(i);
                   }}
-                  onCancel={() => setDrawingCell(null)}
+                  onCancel={() => {}}
                 />
               )}
             </button>

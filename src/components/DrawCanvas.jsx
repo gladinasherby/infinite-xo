@@ -1,11 +1,6 @@
 import React, { useRef, useEffect, useState, useCallback } from "react";
 import "./DrawCanvas.css";
 
-/**
- * Recognizes if drawn strokes look like an X.
- * Two-stroke: checks they go in crossing diagonal directions.
- * One-stroke: checks bounding box is squarish and direction reverses midway.
- */
 function looksLikeX(strokes) {
   const pts = strokes.flat();
   if (pts.length < 6) return false;
@@ -45,17 +40,19 @@ function looksLikeX(strokes) {
   return false;
 }
 
-/**
- * Renders committed strokes as an SVG that stays on the cell permanently.
- */
-export function DrawnInkX({ strokes, size }) {
+export function DrawnInkX({ strokes, size, shady }) {
   if (!strokes || strokes.length === 0) return null;
   return (
     <svg
       width={size}
       height={size}
       viewBox={`0 0 ${size} ${size}`}
-      style={{ position: "absolute", inset: 0, pointerEvents: "none" }}
+      style={{
+        position: "absolute",
+        inset: 0,
+        pointerEvents: "none",
+        opacity: shady ? 0.35 : 1,
+      }}
     >
       {strokes.map((pts, si) =>
         pts.length < 2 ? null : (
@@ -74,18 +71,14 @@ export function DrawnInkX({ strokes, size }) {
   );
 }
 
-/**
- * Transparent drawing overlay placed directly on the cell.
- * User draws; strokes appear as real ink. On lift, auto-validates as X.
- * If not an X after 2 strokes or a timeout, flashes red and clears.
- */
-export default function DrawCanvas({ onConfirm, onCancel, cellSize }) {
+export default function DrawCanvas({ onConfirm, cellSize }) {
   const canvasRef = useRef(null);
   const [strokes, setStrokes] = useState([]);
-  const [isDrawing, setIsDrawing] = useState(false);
-  const [feedback, setFeedback] = useState(null); // null | "bad"
+  const [feedback, setFeedback] = useState(null);
+  const isDrawingRef = useRef(false); // ref so pointer handlers stay stable
   const currentStroke = useRef([]);
   const validateTimer = useRef(null);
+  const committedRef = useRef(false); // prevent double-confirm
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -94,7 +87,7 @@ export default function DrawCanvas({ onConfirm, onCancel, cellSize }) {
     canvas.height = cellSize;
   }, [cellSize]);
 
-  const redraw = useCallback((allStrokes, currentPts) => {
+  const redraw = useCallback((allStrokes, livePts) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
@@ -103,7 +96,6 @@ export default function DrawCanvas({ onConfirm, onCancel, cellSize }) {
     ctx.lineWidth = 3.5;
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
-
     const drawPts = (pts) => {
       if (pts.length < 2) return;
       ctx.beginPath();
@@ -111,36 +103,36 @@ export default function DrawCanvas({ onConfirm, onCancel, cellSize }) {
       for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
       ctx.stroke();
     };
-
     allStrokes.forEach(drawPts);
-    if (currentPts.length) drawPts(currentPts);
+    if (livePts.length) drawPts(livePts);
+  }, []);
+
+  const clearCanvas = useCallback(() => {
+    setStrokes([]);
+    setFeedback(null);
+    currentStroke.current = [];
+    committedRef.current = false;
+    const canvas = canvasRef.current;
+    if (canvas)
+      canvas.getContext("2d").clearRect(0, 0, canvas.width, canvas.height);
   }, []);
 
   const tryValidate = useCallback(
     (newStrokes) => {
       clearTimeout(validateTimer.current);
-      // Auto-validate after the pen lifts with a short pause
       validateTimer.current = setTimeout(() => {
+        if (committedRef.current) return;
         if (looksLikeX(newStrokes)) {
-          // Pass strokes up so parent can render them permanently
+          committedRef.current = true;
           onConfirm(newStrokes);
         } else if (newStrokes.length >= 2) {
-          // Two strokes and still not an X — reject
           setFeedback("bad");
-          setTimeout(() => {
-            setStrokes([]);
-            setFeedback(null);
-            const canvas = canvasRef.current;
-            if (canvas)
-              canvas
-                .getContext("2d")
-                .clearRect(0, 0, canvas.width, canvas.height);
-          }, 700);
+          setTimeout(clearCanvas, 700);
         }
-        // If only 1 stroke and not valid yet, wait for the second stroke
+        // 1 stroke that isn't an X yet — wait for a second stroke
       }, 400);
     },
-    [onConfirm],
+    [onConfirm, clearCanvas],
   );
 
   const getPos = (e) => {
@@ -149,34 +141,55 @@ export default function DrawCanvas({ onConfirm, onCancel, cellSize }) {
     return { x: src.clientX - rect.left, y: src.clientY - rect.top };
   };
 
-  const onPointerDown = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    canvasRef.current.setPointerCapture(e.pointerId);
-    clearTimeout(validateTimer.current);
-    setIsDrawing(true);
-    setFeedback(null);
-    currentStroke.current = [getPos(e)];
-    redraw(strokes, currentStroke.current);
-  };
+  const onPointerDown = useCallback(
+    (e) => {
+      // Only respond to the primary pointer (ignore if another cell is mid-stroke)
+      if (!e.isPrimary) return;
+      e.preventDefault();
+      e.stopPropagation();
+      canvasRef.current.setPointerCapture(e.pointerId);
+      clearTimeout(validateTimer.current);
+      isDrawingRef.current = true;
+      setFeedback(null);
+      currentStroke.current = [getPos(e)];
+      // Use functional update to read latest strokes without stale closure
+      setStrokes((s) => {
+        redraw(s, currentStroke.current);
+        return s;
+      });
+    },
+    [redraw],
+  );
 
-  const onPointerMove = (e) => {
-    if (!isDrawing) return;
-    e.preventDefault();
-    currentStroke.current.push(getPos(e));
-    redraw(strokes, currentStroke.current);
-  };
+  const onPointerMove = useCallback(
+    (e) => {
+      if (!isDrawingRef.current || !e.isPrimary) return;
+      e.preventDefault();
+      currentStroke.current.push(getPos(e));
+      setStrokes((s) => {
+        redraw(s, currentStroke.current);
+        return s;
+      });
+    },
+    [redraw],
+  );
 
-  const onPointerUp = (e) => {
-    if (!isDrawing) return;
-    e.preventDefault();
-    setIsDrawing(false);
-    const newStrokes = [...strokes, [...currentStroke.current]];
-    currentStroke.current = [];
-    setStrokes(newStrokes);
-    redraw(newStrokes, []);
-    tryValidate(newStrokes);
-  };
+  const onPointerUp = useCallback(
+    (e) => {
+      if (!isDrawingRef.current || !e.isPrimary) return;
+      e.preventDefault();
+      isDrawingRef.current = false;
+      const finished = [...currentStroke.current];
+      currentStroke.current = [];
+      setStrokes((prev) => {
+        const newStrokes = [...prev, finished];
+        redraw(newStrokes, []);
+        tryValidate(newStrokes);
+        return newStrokes;
+      });
+    },
+    [redraw, tryValidate],
+  );
 
   return (
     <canvas
