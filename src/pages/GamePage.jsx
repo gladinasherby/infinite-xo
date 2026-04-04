@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import confetti from "canvas-confetti";
 import { simulateMove, getBestMove } from "../logic/gameLogic";
 import { DrawnX, DrawnO } from "../components/Drawnmark";
 import { StrikeLine } from "../components/StrikeLine";
 import { useGame } from "../context/GameContext";
+import DrawCanvas, { DrawnInkX } from "../components/DrawCanvas";
 
 export default function GamePage({ onHome }) {
   const { mode } = useGame();
@@ -20,21 +21,23 @@ export default function GamePage({ onHome }) {
     startingPlayer: "X",
   });
 
-  const GRID_PENCIL_FILTER = () => (
-    <defs>
-      <filter id="pencil-grid" x="-10%" y="-10%" width="120%" height="120%">
-        <feTurbulence
-          type="fractalNoise"
-          baseFrequency="0.05"
-          numOctaves="3"
-          seed="5"
-        />
-        <feDisplacementMap in="SourceGraphic" scale="2" />
-      </filter>
-    </defs>
-  );
+  const [drawingCell, setDrawingCell] = useState(null);
+  const [cellSize, setCellSize] = useState(120);
+  // Map of cell index -> stroke data for draw mode X marks
+  const [inkStrokes, setInkStrokes] = useState({});
+  const gridRef = useRef(null);
+
+  useEffect(() => {
+    if (!gridRef.current) return;
+    const firstCell = gridRef.current.querySelector(".cell");
+    if (firstCell) {
+      setCellSize(firstCell.getBoundingClientRect().width);
+    }
+  });
 
   const resetBoard = useCallback(() => {
+    setDrawingCell(null);
+    setInkStrokes({});
     setState((s) => ({
       ...s,
       board: Array(9).fill(null),
@@ -93,9 +96,10 @@ export default function GamePage({ onHome }) {
     });
   }, []);
 
-  // AI turn — only when mode is "vs-ai"
+  // AI plays O in both "vs-ai" and "draw" modes
   useEffect(() => {
-    if (mode === "vs-ai" && state.currentPlayer === "O" && !state.winner) {
+    const isAiMode = mode === "vs-ai" || mode === "draw";
+    if (isAiMode && state.currentPlayer === "O" && !state.winner) {
       setState((s) => ({ ...s, isProcessing: true }));
       const t = setTimeout(() => {
         const logicBoard = state.board.map((cell) => (cell ? cell.char : null));
@@ -121,7 +125,12 @@ export default function GamePage({ onHome }) {
     }
   }, [state.winner, resetBoard]);
 
-  const isAiTurn = mode === "vs-ai" && state.currentPlayer === "O";
+  const isDrawMode = mode === "draw";
+  const isMyDrawTurn =
+    isDrawMode &&
+    state.currentPlayer === "X" &&
+    !state.winner &&
+    !state.isProcessing;
 
   return (
     <div className="container">
@@ -140,10 +149,12 @@ export default function GamePage({ onHome }) {
           ? `${state.winner} WINS!`
           : state.isProcessing
             ? "AI WRITING..."
-            : `${state.currentPlayer}'S TURN`}
+            : isMyDrawTurn
+              ? "DRAW YOUR X"
+              : `${state.currentPlayer}'S TURN`}
       </p>
 
-      <div className="grid">
+      <div className="grid" ref={gridRef}>
         {state.winner && state.winningLine && (
           <StrikeLine
             key={`${state.scores.X}-${state.scores.O}`}
@@ -158,7 +169,6 @@ export default function GamePage({ onHome }) {
 
           const markId = cell ? cell.id : `empty-${i}`;
 
-          // In vs-human mode, both X and O are clickable
           const clickable =
             !state.isProcessing &&
             !state.winner &&
@@ -168,13 +178,47 @@ export default function GamePage({ onHome }) {
             <button
               key={i}
               className="cell"
-              onClick={() => clickable && applyMove(i)}
+              style={{
+                position: "relative",
+                cursor: isMyDrawTurn && !cell ? "crosshair" : undefined,
+              }}
+              onClick={() => {
+                if (isMyDrawTurn && !cell && drawingCell === null) {
+                  setDrawingCell(i);
+                  return;
+                }
+                if (!isDrawMode && clickable) applyMove(i);
+              }}
             >
-              {cell?.char === "X" && (
-                <DrawnX key={markId} uid={markId} shady={isOldest} />
+              {/* In draw mode: show the user's actual ink for X marks */}
+              {isDrawMode && cell?.char === "X" && inkStrokes[i] ? (
+                <DrawnInkX
+                  strokes={inkStrokes[i]}
+                  size={cellSize}
+                  shady={isOldest}
+                />
+              ) : (
+                cell?.char === "X" && (
+                  <DrawnX key={markId} uid={markId} shady={isOldest} />
+                )
               )}
+
               {cell?.char === "O" && (
                 <DrawnO key={markId} uid={markId} shady={isOldest} />
+              )}
+
+              {/* Live drawing canvas — shown only on the active cell */}
+              {isDrawMode && drawingCell === i && (
+                <DrawCanvas
+                  cellSize={cellSize}
+                  onConfirm={(strokes) => {
+                    // Save the raw ink strokes for this cell
+                    setInkStrokes((prev) => ({ ...prev, [i]: strokes }));
+                    setDrawingCell(null);
+                    applyMove(i);
+                  }}
+                  onCancel={() => setDrawingCell(null)}
+                />
               )}
             </button>
           );

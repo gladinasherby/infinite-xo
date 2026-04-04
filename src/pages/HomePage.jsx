@@ -257,13 +257,22 @@ export default function HomePage({ onPlay }) {
           >
             {soundEnabled ? "♪ SOUND ON" : "♪ SOUND OFF"}
           </button>
+
           <button
             className="sketchy-btn"
             onClick={() =>
-              setMode((p) => (p === "vs-ai" ? "vs-human" : "vs-ai"))
+              setMode((p) => {
+                if (p === "vs-ai") return "vs-human";
+                if (p === "vs-human") return "draw";
+                return "vs-ai";
+              })
             }
           >
-            {mode === "vs-ai" ? "⊞  VS AI" : "⊞  2 PLAYERS"}
+            {mode === "vs-ai"
+              ? "⊞  VS AI"
+              : mode === "vs-human"
+                ? "⊞  2 PLAYERS"
+                : "✏  DRAW MODE"}
           </button>
           <button className="sketchy-btn play-btn" onClick={onPlay}>
             ▶ &nbsp; PLAY
