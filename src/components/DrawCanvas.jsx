@@ -60,7 +60,7 @@ export function DrawnInkX({ strokes, size, shady }) {
             key={si}
             points={pts.map((p) => `${p.x},${p.y}`).join(" ")}
             fill="none"
-            stroke="#1a1a1a"
+            stroke="#e53e3e"
             strokeWidth="3.5"
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -92,7 +92,7 @@ export default function DrawCanvas({ onConfirm, cellSize }) {
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.strokeStyle = "#1a1a1a";
+    ctx.strokeStyle = "#e53e3e";
     ctx.lineWidth = 3.5;
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
