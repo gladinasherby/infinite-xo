@@ -278,3 +278,46 @@ path {
 .reset-all {
   -webkit-tap-highlight-color: transparent;
 }
+
+/* Matching CSS for the Home Button */
+/* Matching CSS for the Home Button (No Border) */
+.home-link {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+
+  background: transparent;
+  border: none;
+  color: var(--pencil-color);
+  font-family: "Architects Daughter", cursive;
+  font-size: 1.2rem;
+  font-weight: bold;
+
+  cursor: pointer;
+  padding: 5px 10px;
+  transition: transform 0.2s ease;
+
+  /* Create a hand-drawn underline effect */
+  text-decoration: underline;
+  text-decoration-style: wavy;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 6px;
+
+  /* Prevent mobile highlight */
+  -webkit-tap-highlight-color: transparent;
+  outline: none;
+}
+
+.home-link:hover {
+  /* Slight tilt and scale to feel like a sketch coming to life */
+  transform: scale(1.1) rotate(-2deg);
+  opacity: 0.8;
+
+  /* Reuse your jitter animation from the cells */
+  animation: jitter 0.3s ease-in-out infinite;
+}
+
+.home-link:active {
+  transform: scale(0.95);
+  filter: blur(0.5px); /* Mimics a smudge when pressed */
+}
