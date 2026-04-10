@@ -106,7 +106,7 @@ body {
   border-right: 3px solid var(--pencil-color);
   border-bottom: 2px solid var(--pencil-color);
   border-radius: 255px 15px 225px 15px / 15px 225px 15px 255px;
-} */
+},, */
 
 .cell svg {
   filter: drop-shadow(1px 1px 1px rgba(0, 0, 0, 0.1));
