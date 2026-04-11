@@ -9,7 +9,7 @@
 body {
   margin: 0;
   padding: 0;
-  /* Paper Texture & Graph Paper Pattern */
+
   background-color: var(--bg-paper);
   background-image:
     linear-gradient(var(--graph-line) 1px, transparent 1px),
