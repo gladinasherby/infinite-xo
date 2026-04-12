@@ -114,7 +114,6 @@ export default function GamePage({ onHome }) {
     mode,
   ]);
 
-  // Auto-reset on win
   useEffect(() => {
     if (state.winner) {
       const t = setTimeout(resetBoard, 4000);
