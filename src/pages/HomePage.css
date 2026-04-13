@@ -10,7 +10,6 @@
   font-family: inherit;
 }
 
-/* ── Ghost background — fills entire viewport ─────────────── */
 .ghost-bg {
   position: absolute;
   inset: 0;
