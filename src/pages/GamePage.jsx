@@ -7,7 +7,7 @@ import { useGame } from "../context/GameContext";
 import DrawCanvas, { DrawnInkX } from "../components/DrawCanvas";
 
 export default function GamePage({ onHome }) {
-  const { mode } = useGame();
+  const { mode, soundEnabled } = useGame();
 
   const [state, setState] = useState({
     board: Array(9).fill(null),
@@ -155,6 +155,7 @@ export default function GamePage({ onHome }) {
           <StrikeLine
             key={`${state.scores.X}-${state.scores.O}`}
             indices={state.winningLine}
+            soundEnabled={soundEnabled}
           />
         )}
         {state.board.map((cell, i) => {
@@ -190,12 +191,22 @@ export default function GamePage({ onHome }) {
                 />
               ) : (
                 cell?.char === "X" && (
-                  <DrawnX key={markId} uid={markId} shady={isOldest} />
+                  <DrawnX
+                    key={markId}
+                    uid={markId}
+                    shady={isOldest}
+                    soundEnabled={soundEnabled}
+                  />
                 )
               )}
 
               {cell?.char === "O" && (
-                <DrawnO key={markId} uid={markId} shady={isOldest} />
+                <DrawnO
+                  key={markId}
+                  uid={markId}
+                  shady={isOldest}
+                  soundEnabled={soundEnabled}
+                />
               )}
 
               {/* Canvas is always mounted on empty cells during X's draw turn */}

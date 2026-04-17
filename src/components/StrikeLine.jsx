@@ -1,4 +1,14 @@
-export function StrikeLine({ indices }) {
+import React, { useEffect } from "react";
+
+export function StrikeLine({ indices, soundEnabled = true }) {
+  useEffect(() => {
+    if (soundEnabled && indices && indices.length >= 3) {
+      const audio = new Audio("/sounds/pencil-strike.mp3");
+      audio.volume = 0.6;
+      audio.play().catch(() => {});
+    }
+  }, [indices, soundEnabled]);
+
   if (!indices || indices.length < 3) return null;
 
   const points = [
@@ -15,7 +25,6 @@ export function StrikeLine({ indices }) {
 
   const p1 = points[indices[0]];
   const p2 = points[indices[2]];
-
   const overshoot = 8;
   const dx = p2.x - p1.x;
   const dy = p2.y - p1.y;
@@ -31,8 +40,6 @@ export function StrikeLine({ indices }) {
   };
 
   const pathData = `M ${start.x} ${start.y} Q ${mid.x} ${mid.y} ${end.x} ${end.y}`;
-
-  // ✅ Only change: diagonal gets a longer dash budget
   const isDiagonal = dx !== 0 && dy !== 0;
   const dashLength = isDiagonal ? 450 : 300;
 
