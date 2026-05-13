@@ -213,6 +213,7 @@ export default function GamePage({ onHome }) {
               {showDrawCanvas && (
                 <DrawCanvas
                   cellSize={cellSize}
+                  soundEnabled={soundEnabled}
                   onConfirm={(strokes) => {
                     setInkStrokes((prev) => ({ ...prev, [i]: strokes }));
                     applyMove(i);

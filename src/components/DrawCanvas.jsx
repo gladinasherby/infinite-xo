@@ -41,6 +41,9 @@ function looksLikeX(strokes) {
 }
 
 export function DrawnInkX({ strokes, size, shady }) {
+  const uidRef = useRef(`ink-${Math.random().toString(36).slice(2, 9)}`);
+  const uid = uidRef.current;
+
   if (!strokes || strokes.length === 0) return null;
   return (
     <svg
@@ -54,24 +57,44 @@ export function DrawnInkX({ strokes, size, shady }) {
         opacity: shady ? 0.35 : 1,
       }}
     >
-      {strokes.map((pts, si) =>
-        pts.length < 2 ? null : (
-          <polyline
-            key={si}
-            points={pts.map((p) => `${p.x},${p.y}`).join(" ")}
-            fill="none"
-            stroke="#e53e3e"
-            strokeWidth="3.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
+      <defs>
+        <filter id={uid} x="-10%" y="-10%" width="120%" height="120%">
+          <feTurbulence
+            type="fractalNoise"
+            baseFrequency="0.065"
+            numOctaves="3"
+            seed={Math.random()}
+            result="noise"
           />
-        ),
-      )}
+          <feDisplacementMap
+            in="SourceGraphic"
+            in2="noise"
+            scale="1.4"
+            xChannelSelector="R"
+            yChannelSelector="G"
+          />
+        </filter>
+      </defs>
+      <g filter={`url(#${uid})`}>
+        {strokes.map((pts, si) =>
+          pts.length < 2 ? null : (
+            <polyline
+              key={si}
+              points={pts.map((p) => `${p.x},${p.y}`).join(" ")}
+              fill="none"
+              stroke="#e53e3e"
+              strokeWidth="3.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          ),
+        )}
+      </g>
     </svg>
   );
 }
 
-export default function DrawCanvas({ onConfirm, cellSize }) {
+export default function DrawCanvas({ onConfirm, cellSize, soundEnabled = true }) {
   const canvasRef = useRef(null);
   const [strokes, setStrokes] = useState([]);
   const [feedback, setFeedback] = useState(null);
@@ -79,6 +102,14 @@ export default function DrawCanvas({ onConfirm, cellSize }) {
   const currentStroke = useRef([]);
   const validateTimer = useRef(null);
   const committedRef = useRef(false); // prevent double-confirm
+  const audioRef = useRef(null);
+  const canvasUidRef = useRef(`canvas-pencil-${Math.random().toString(36).slice(2, 9)}`);
+
+  useEffect(() => {
+    audioRef.current = new Audio("/sounds/pencil-draw.mp3");
+    audioRef.current.loop = true;
+    audioRef.current.volume = 0.4;
+  }, []);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -157,8 +188,14 @@ export default function DrawCanvas({ onConfirm, cellSize }) {
         redraw(s, currentStroke.current);
         return s;
       });
+
+      if (soundEnabled && audioRef.current) {
+        audioRef.current.play().catch((err) => {
+          console.log("Audio play blocked", err);
+        });
+      }
     },
-    [redraw],
+    [redraw, soundEnabled],
   );
 
   const onPointerMove = useCallback(
@@ -174,11 +211,20 @@ export default function DrawCanvas({ onConfirm, cellSize }) {
     [redraw],
   );
 
+  const stopAudio = useCallback(() => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      // Resetting currentTime makes it sound fresh on next stroke
+      audioRef.current.currentTime = 0;
+    }
+  }, []);
+
   const onPointerUp = useCallback(
     (e) => {
       if (!isDrawingRef.current || !e.isPrimary) return;
       e.preventDefault();
       isDrawingRef.current = false;
+      stopAudio();
       const finished = [...currentStroke.current];
       currentStroke.current = [];
       setStrokes((prev) => {
@@ -188,17 +234,59 @@ export default function DrawCanvas({ onConfirm, cellSize }) {
         return newStrokes;
       });
     },
-    [redraw, tryValidate],
+    [redraw, tryValidate, stopAudio],
+  );
+
+  const onPointerCancel = useCallback(
+    (e) => {
+      if (!isDrawingRef.current || !e.isPrimary) return;
+      isDrawingRef.current = false;
+      stopAudio();
+      currentStroke.current = [];
+      setStrokes((prev) => {
+        redraw(prev, []);
+        return prev;
+      });
+    },
+    [redraw, stopAudio],
   );
 
   return (
-    <canvas
-      ref={canvasRef}
-      className={`draw-canvas-inline ${feedback === "bad" ? "draw-flash-bad" : ""}`}
-      onPointerDown={onPointerDown}
-      onPointerMove={onPointerMove}
-      onPointerUp={onPointerUp}
-      style={{ touchAction: "none", cursor: "crosshair" }}
-    />
+    <>
+      <svg style={{ width: 0, height: 0, position: "absolute", pointerEvents: "none" }}>
+        <defs>
+          <filter id={canvasUidRef.current} x="-10%" y="-10%" width="120%" height="120%">
+            <feTurbulence
+              type="fractalNoise"
+              baseFrequency="0.065"
+              numOctaves="3"
+              seed="123"
+              result="noise"
+            />
+            <feDisplacementMap
+              in="SourceGraphic"
+              in2="noise"
+              scale="1.4"
+              xChannelSelector="R"
+              yChannelSelector="G"
+            />
+          </filter>
+        </defs>
+      </svg>
+      <canvas
+        ref={canvasRef}
+        className={`draw-canvas-inline ${feedback === "bad" ? "draw-flash-bad" : ""}`}
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        onPointerCancel={onPointerCancel}
+        onPointerOut={onPointerCancel}
+        style={{
+          touchAction: "none",
+          cursor: "crosshair",
+          filter: `url(#${canvasUidRef.current})`,
+        }}
+      />
+    </>
   );
 }

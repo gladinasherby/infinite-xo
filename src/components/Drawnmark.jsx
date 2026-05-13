@@ -1,5 +1,6 @@
 import React, { useEffect } from "react";
 
+// Instead of a global const outside the component
 const drawSound =
   typeof Audio !== "undefined" ? new Audio("/sounds/pencil-draw.mp3") : null;
 
@@ -26,16 +27,17 @@ const PENCIL_FILTER = (uid) => (
 
 export function DrawnX({ uid, shady, soundEnabled = true }) {
   useEffect(() => {
-    if (soundEnabled && !shady && drawSound) {
-      // Reset to start in case it's still playing from a previous move
-      drawSound.currentTime = 0;
-      drawSound.volume = 0.4;
+    if (soundEnabled && !shady) {
+      // Re-initialize or use a ref to ensure Safari sees this as a fresh play attempt
+      const audio = new Audio("/sounds/pencil-draw.mp3");
+      audio.volume = 0.4;
 
-      const playPromise = drawSound.play();
+      const playPromise = audio.play();
 
       if (playPromise !== undefined) {
         playPromise.catch((error) => {
-          console.error("Playback failed:", error);
+          // Safari will land here if the user hasn't clicked anything yet
+          console.log("Waiting for user interaction to play audio");
         });
       }
     }
