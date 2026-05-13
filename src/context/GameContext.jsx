@@ -4,7 +4,9 @@ const GameContext = createContext();
 
 export function GameProvider({ children }) {
   const [soundEnabled, setSoundEnabled] = useState(true);
-  const [mode, setMode] = useState("vs-ai");
+  const [opponentType, setOpponentType] = useState("ai"); // 'ai', 'local', 'online'
+  const [drawMode, setDrawMode] = useState(false);
+  const [roomData, setRoomData] = useState(null); // { code, role: 'X'|'O', socket }
 
   useEffect(() => {
     const resumeAudio = () => {
@@ -30,7 +32,12 @@ export function GameProvider({ children }) {
 
   return (
     <GameContext.Provider
-      value={{ soundEnabled, setSoundEnabled, mode, setMode }}
+      value={{
+        soundEnabled, setSoundEnabled,
+        opponentType, setOpponentType,
+        drawMode, setDrawMode,
+        roomData, setRoomData
+      }}
     >
       {children}
     </GameContext.Provider>

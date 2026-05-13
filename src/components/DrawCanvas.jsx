@@ -40,7 +40,7 @@ function looksLikeX(strokes) {
   return false;
 }
 
-export function DrawnInkX({ strokes, size, shady }) {
+export function DrawnInkX({ strokes, size, shady, char = "X" }) {
   const uidRef = useRef(`ink-${Math.random().toString(36).slice(2, 9)}`);
   const uid = uidRef.current;
 
@@ -82,7 +82,7 @@ export function DrawnInkX({ strokes, size, shady }) {
               key={si}
               points={pts.map((p) => `${p.x},${p.y}`).join(" ")}
               fill="none"
-              stroke="#e53e3e"
+              stroke={char === "X" ? "#e53e3e" : "#1d4ed8"}
               strokeWidth="3.5"
               strokeLinecap="round"
               strokeLinejoin="round"

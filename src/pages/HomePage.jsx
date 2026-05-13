@@ -192,10 +192,19 @@ const GAP_PX = 4;
 const STEP = BOARD_PX + GAP_PX;
 
 export default function HomePage({ onPlay }) {
-  const { soundEnabled, setSoundEnabled, mode, setMode } = useGame();
+  const { 
+    soundEnabled, setSoundEnabled, 
+    opponentType, setOpponentType, 
+    drawMode, setDrawMode, 
+    setRoomData 
+  } = useGame();
 
-  // Calculate how many boards we need to fill the screen
   const [grid, setGrid] = useState({ cols: 8, rows: 6 });
+  const [onlineState, setOnlineState] = useState('idle'); // 'idle', 'choose', 'hosting', 'joining'
+  const [joinCode, setJoinCode] = useState("");
+  const [localRoomCode, setLocalRoomCode] = useState("");
+  const socketRef = useRef(null);
+
   useEffect(() => {
     function recalc() {
       const cols = Math.ceil(window.innerWidth / STEP) + 2;
@@ -207,8 +216,70 @@ export default function HomePage({ onPlay }) {
     return () => window.removeEventListener("resize", recalc);
   }, []);
 
+  // Cleanup socket if we unmount while not playing
+  useEffect(() => {
+    return () => {
+      if (socketRef.current && onlineState !== 'playing') {
+        socketRef.current.disconnect();
+      }
+    };
+  }, [onlineState]);
+
   const count = grid.cols * grid.rows;
   const games = useGhostGames(count);
+
+  const handlePlayClick = () => {
+    if (opponentType === 'online') {
+      setOnlineState('choose');
+    } else {
+      setRoomData(null);
+      onPlay();
+    }
+  };
+
+  const handleHost = async () => {
+    setOnlineState('hosting');
+    // Using dynamic import so it doesn't break if socket.io-client is missing or SSR
+    const { io } = await import('socket.io-client');
+    const socket = io("http://localhost:3001");
+    socketRef.current = socket;
+
+    socket.emit('create_room');
+    socket.on('room_created', (code) => {
+      setLocalRoomCode(code);
+    });
+
+    socket.on('game_start', (data) => {
+      setOnlineState('playing');
+      setRoomData({ code: data.code, role: 'X', socket });
+      onPlay();
+    });
+  };
+
+  const handleJoin = () => {
+    setOnlineState('joining');
+  };
+
+  const submitJoin = async () => {
+    if (joinCode.length !== 6) return;
+    const { io } = await import('socket.io-client');
+    const socket = io("http://localhost:3001");
+    socketRef.current = socket;
+
+    socket.emit('join_room', joinCode);
+
+    socket.on('join_error', (msg) => {
+      alert(msg);
+      socket.disconnect();
+      setOnlineState('choose');
+    });
+
+    socket.on('game_start', (data) => {
+      setOnlineState('playing');
+      setRoomData({ code: data.code, role: 'O', socket });
+      onPlay();
+    });
+  };
 
   return (
     <div className="home-root">
@@ -241,33 +312,90 @@ export default function HomePage({ onPlay }) {
 
       {/* Centered overlay UI */}
       <div className="home-ui">
-        {/* <h1 className="home-title">
-          TIC
-          <br />
-          TAC
-          <br />
-          TOE
-        </h1> */}
         <p className="home-tagline">Infinite XO</p>
 
-        <div className="home-buttons">
-          <button
-            className="sketchy-btn"
-            onClick={() => setSoundEnabled((p) => !p)}
-          >
-            {soundEnabled ? "♪ SOUND ON" : "♪ SOUND OFF"}
-          </button>
+        {onlineState === 'idle' && (
+          <div className="home-buttons">
+            <button
+              className="sketchy-btn"
+              onClick={() => setSoundEnabled((p) => !p)}
+            >
+              {soundEnabled ? "♪ SOUND ON" : "♪ SOUND OFF"}
+            </button>
 
-          <button
-            className="sketchy-btn"
-            onClick={() => setMode((p) => (p === "vs-ai" ? "draw" : "vs-ai"))}
-          >
-            {mode === "vs-ai" ? "⊞ DRAW : OFF" : "✏  DRAW : ON"}
-          </button>
-          <button className="sketchy-btn play-btn" onClick={onPlay}>
-            ▶ &nbsp; PLAY
-          </button>
-        </div>
+            <button
+              className="sketchy-btn"
+              onClick={() => {
+                setOpponentType(p => p === 'ai' ? 'local' : p === 'local' ? 'online' : 'ai');
+              }}
+            >
+              {opponentType === 'ai' ? "👤 VS AI" : opponentType === 'local' ? "👥 2 PLAYERS" : "🌐 PLAY ONLINE"}
+            </button>
+
+            <button
+              className="sketchy-btn"
+              onClick={() => setDrawMode((p) => !p)}
+            >
+              {drawMode ? "✏ DRAW : ON" : "⊞ DRAW : OFF"}
+            </button>
+
+            <button className="sketchy-btn play-btn" onClick={handlePlayClick}>
+              ▶ &nbsp; PLAY
+            </button>
+          </div>
+        )}
+
+        {onlineState === 'choose' && (
+          <div className="home-buttons">
+            <p style={{marginBottom: "10px", fontWeight: "bold"}}>Play Online</p>
+            <button className="sketchy-btn" onClick={handleHost}>
+              CREATE GAME
+            </button>
+            <button className="sketchy-btn" onClick={handleJoin}>
+              JOIN GAME
+            </button>
+            <button className="sketchy-btn" onClick={() => setOnlineState('idle')} style={{marginTop: "20px"}}>
+              ← BACK
+            </button>
+          </div>
+        )}
+
+        {onlineState === 'hosting' && (
+          <div className="home-buttons">
+            <p style={{marginBottom: "10px", fontWeight: "bold"}}>Waiting for opponent...</p>
+            <p style={{fontSize: "2rem", letterSpacing: "5px", background: "#f0f0f0", padding: "10px", borderRadius: "5px"}}>{localRoomCode || "..."}</p>
+            <p style={{fontSize: "0.8rem", color: "#666", marginTop: "5px"}}>Code expires in 5 minutes</p>
+            <button className="sketchy-btn" onClick={() => {
+              if (socketRef.current) socketRef.current.disconnect();
+              setOnlineState('choose');
+            }} style={{marginTop: "20px"}}>
+              CANCEL
+            </button>
+          </div>
+        )}
+
+        {onlineState === 'joining' && (
+          <div className="home-buttons">
+            <p style={{marginBottom: "10px", fontWeight: "bold"}}>Enter 6-digit code</p>
+            <input 
+              type="text" 
+              maxLength={6}
+              value={joinCode}
+              onChange={(e) => setJoinCode(e.target.value.replace(/[^0-9]/g, ''))}
+              style={{fontSize: "1.5rem", textAlign: "center", width: "150px", padding: "10px", marginBottom: "10px", letterSpacing: "5px"}}
+            />
+            <button className="sketchy-btn" onClick={submitJoin}>
+              JOIN
+            </button>
+            <button className="sketchy-btn" onClick={() => {
+              if (socketRef.current) socketRef.current.disconnect();
+              setOnlineState('choose');
+            }} style={{marginTop: "20px"}}>
+              ← BACK
+            </button>
+          </div>
+        )}
+
       </div>
     </div>
   );

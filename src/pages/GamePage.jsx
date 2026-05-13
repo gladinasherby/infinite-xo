@@ -7,7 +7,7 @@ import { useGame } from "../context/GameContext";
 import DrawCanvas, { DrawnInkX } from "../components/DrawCanvas";
 
 export default function GamePage({ onHome }) {
-  const { mode, soundEnabled } = useGame();
+  const { soundEnabled, opponentType, drawMode, roomData } = useGame();
 
   const [state, setState] = useState({
     board: Array(9).fill(null),
@@ -93,10 +93,39 @@ export default function GamePage({ onHome }) {
     });
   }, []);
 
-  // AI plays O in both "vs-ai" and "draw" modes
+  // Sync with remote server if online
   useEffect(() => {
-    const isAiMode = mode === "vs-ai" || mode === "draw";
-    if (isAiMode && state.currentPlayer === "O" && !state.winner) {
+    if (opponentType === 'online' && roomData?.socket) {
+      const socket = roomData.socket;
+      const onRemoteMove = (data) => {
+        if (data.strokes) {
+          setInkStrokes((prev) => ({ ...prev, [data.move]: data.strokes }));
+        }
+        applyMove(data.move);
+      };
+      
+      const onRemotePlayAgain = () => {
+        setState((s) => ({
+          ...s,
+          scores: { X: 0, O: 0 },
+          startingPlayer: "X",
+        }));
+        resetBoard();
+      };
+      
+      socket.on('remote_move', onRemoteMove);
+      socket.on('remote_play_again', onRemotePlayAgain);
+      
+      return () => {
+        socket.off('remote_move', onRemoteMove);
+        socket.off('remote_play_again', onRemotePlayAgain);
+      };
+    }
+  }, [opponentType, roomData, applyMove, resetBoard]);
+
+  // AI plays O in "ai" mode
+  useEffect(() => {
+    if (opponentType === 'ai' && state.currentPlayer === "O" && !state.winner) {
       setState((s) => ({ ...s, isProcessing: true }));
       const t = setTimeout(() => {
         const logicBoard = state.board.map((cell) => (cell ? cell.char : null));
@@ -111,7 +140,7 @@ export default function GamePage({ onHome }) {
     state.board,
     state.queues,
     applyMove,
-    mode,
+    opponentType,
   ]);
 
   useEffect(() => {
@@ -121,16 +150,36 @@ export default function GamePage({ onHome }) {
     }
   }, [state.winner, resetBoard]);
 
-  const isDrawMode = mode === "draw";
+  const isMyTurn = opponentType === 'online' && roomData 
+    ? state.currentPlayer === roomData.role 
+    : opponentType === 'ai' 
+      ? state.currentPlayer === 'X' 
+      : true;
+
   const isMyDrawTurn =
-    isDrawMode &&
-    state.currentPlayer === "X" &&
+    drawMode &&
+    isMyTurn &&
     !state.winner &&
     !state.isProcessing;
 
+  const statusText = state.winner
+    ? `${state.winner} WINS!`
+    : state.isProcessing
+      ? "AI WRITING..."
+      : isMyDrawTurn
+        ? `DRAW YOUR ${state.currentPlayer}`
+        : opponentType === 'online' && !isMyTurn
+          ? "WAITING FOR OPPONENT"
+          : `${state.currentPlayer}'S TURN`;
+
   return (
     <div className="container">
-      <button className="home-link" onClick={onHome}>
+      <button className="home-link" onClick={() => {
+        if (roomData?.socket) {
+          roomData.socket.disconnect();
+        }
+        onHome();
+      }}>
         ← HOME
       </button>
 
@@ -141,13 +190,7 @@ export default function GamePage({ onHome }) {
       </div>
 
       <p className="status">
-        {state.winner
-          ? `${state.winner} WINS!`
-          : state.isProcessing
-            ? "AI WRITING..."
-            : isMyDrawTurn
-              ? "DRAW YOUR X"
-              : `${state.currentPlayer}'S TURN`}
+        {statusText}
       </p>
 
       <div className="grid" ref={gridRef}>
@@ -169,9 +212,9 @@ export default function GamePage({ onHome }) {
           const clickable =
             !state.isProcessing &&
             !state.winner &&
-            (mode === "vs-human" || state.currentPlayer === "X");
+            isMyTurn;
 
-          // In draw mode, canvas is live on every empty cell — no click to activate
+          // In draw mode, canvas is live on every empty cell if it's my turn
           const showDrawCanvas = isMyDrawTurn && !cell;
 
           return (
@@ -180,10 +223,15 @@ export default function GamePage({ onHome }) {
               className="cell"
               style={{ position: "relative" }}
               onClick={() => {
-                if (!isDrawMode && clickable) applyMove(i);
+                if (!drawMode && clickable) {
+                  applyMove(i);
+                  if (opponentType === 'online' && roomData) {
+                    roomData.socket.emit('make_move', { code: roomData.code, move: i, strokes: null });
+                  }
+                }
               }}
             >
-              {isDrawMode && cell?.char === "X" && inkStrokes[i] ? (
+              {drawMode && cell?.char === "X" && inkStrokes[i] ? (
                 <DrawnInkX
                   strokes={inkStrokes[i]}
                   size={cellSize}
@@ -200,16 +248,28 @@ export default function GamePage({ onHome }) {
                 )
               )}
 
-              {cell?.char === "O" && (
-                <DrawnO
-                  key={markId}
-                  uid={markId}
+              {drawMode && cell?.char === "O" && inkStrokes[i] ? (
+                // Use a DrawnInk for O but with O's color logic. Since DrawnInkX uses red, we could make it DrawnInkO or just use it.
+                // Wait, previously DrawnInk was only for X because AI played O!
+                // For online, both might draw. We need to pass color. DrawnInkX defaults to red.
+                // I will add a char prop to DrawnInkX below, but for now we'll rely on it.
+                <DrawnInkX
+                  strokes={inkStrokes[i]}
+                  size={cellSize}
                   shady={isOldest}
-                  soundEnabled={soundEnabled}
+                  char="O"
                 />
+              ) : (
+                cell?.char === "O" && (
+                  <DrawnO
+                    key={markId}
+                    uid={markId}
+                    shady={isOldest}
+                    soundEnabled={soundEnabled}
+                  />
+                )
               )}
 
-              {/* Canvas is always mounted on empty cells during X's draw turn */}
               {showDrawCanvas && (
                 <DrawCanvas
                   cellSize={cellSize}
@@ -217,6 +277,9 @@ export default function GamePage({ onHome }) {
                   onConfirm={(strokes) => {
                     setInkStrokes((prev) => ({ ...prev, [i]: strokes }));
                     applyMove(i);
+                    if (opponentType === 'online' && roomData) {
+                      roomData.socket.emit('make_move', { code: roomData.code, move: i, strokes });
+                    }
                   }}
                   onCancel={() => {}}
                 />
@@ -235,6 +298,9 @@ export default function GamePage({ onHome }) {
             startingPlayer: "X",
           }));
           resetBoard();
+          if (opponentType === 'online' && roomData) {
+             roomData.socket.emit('play_again', { code: roomData.code });
+          }
         }}
       >
         CLEAR PAGE
