@@ -241,7 +241,7 @@ export default function HomePage({ onPlay }) {
     setOnlineState('hosting');
     // Using dynamic import so it doesn't break if socket.io-client is missing or SSR
     const { io } = await import('socket.io-client');
-    const socket = io("http://localhost:3001");
+    const socket = io(import.meta.env.VITE_SERVER_URL || "http://localhost:3001");
     socketRef.current = socket;
 
     socket.emit('create_room');
@@ -263,7 +263,7 @@ export default function HomePage({ onPlay }) {
   const submitJoin = async () => {
     if (joinCode.length !== 6) return;
     const { io } = await import('socket.io-client');
-    const socket = io("http://localhost:3001");
+    const socket = io(import.meta.env.VITE_SERVER_URL || "http://localhost:3001");
     socketRef.current = socket;
 
     socket.emit('join_room', joinCode);
