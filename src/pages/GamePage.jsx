@@ -47,29 +47,44 @@ export default function GamePage({ onHome }) {
     }));
   }, []);
 
-  const applyMove = useCallback((index) => {
+  const applyMove = useCallback((index, forcedPlayer = null) => {
     setState((prev) => {
       if (prev.board[index] || prev.winner) return prev;
+
+      const player = forcedPlayer || prev.currentPlayer;
 
       const logicBoard = prev.board.map((cell) => (cell ? cell.char : null));
 
       const { nextBoard, nextQueues, winner, winningLine } = simulateMove(
         logicBoard,
         prev.queues,
-        prev.currentPlayer,
+        player,
         index,
       );
 
       const newMoveCount = prev.moveCount + 1;
+
       const updatedBoard = nextBoard.map((char, i) => {
         if (!char) return null;
-        if (i === index) return { char, id: newMoveCount };
+
+        if (i === index) {
+          return {
+            char,
+            id: newMoveCount,
+          };
+        }
+
         return prev.board[i];
       });
 
       if (winner) {
-        const newScores = { ...prev.scores, [winner]: prev.scores[winner] + 1 };
+        const newScores = {
+          ...prev.scores,
+          [winner]: prev.scores[winner] + 1,
+        };
+
         confetti({});
+
         return {
           ...prev,
           board: updatedBoard,
@@ -87,7 +102,7 @@ export default function GamePage({ onHome }) {
         board: updatedBoard,
         queues: nextQueues,
         moveCount: newMoveCount,
-        currentPlayer: prev.currentPlayer === "X" ? "O" : "X",
+        currentPlayer: player === "X" ? "O" : "X",
         isProcessing: false,
       };
     });
@@ -95,15 +110,15 @@ export default function GamePage({ onHome }) {
 
   // Sync with remote server if online
   useEffect(() => {
-    if (opponentType === 'online' && roomData?.socket) {
+    if (opponentType === "online" && roomData?.socket) {
       const socket = roomData.socket;
       const onRemoteMove = (data) => {
         if (data.strokes) {
           setInkStrokes((prev) => ({ ...prev, [data.move]: data.strokes }));
         }
-        applyMove(data.move);
+        applyMove(data.move, data.player);
       };
-      
+
       const onRemotePlayAgain = () => {
         setState((s) => ({
           ...s,
@@ -112,20 +127,20 @@ export default function GamePage({ onHome }) {
         }));
         resetBoard();
       };
-      
-      socket.on('remote_move', onRemoteMove);
-      socket.on('remote_play_again', onRemotePlayAgain);
-      
+
+      socket.on("remote_move", onRemoteMove);
+      socket.on("remote_play_again", onRemotePlayAgain);
+
       return () => {
-        socket.off('remote_move', onRemoteMove);
-        socket.off('remote_play_again', onRemotePlayAgain);
+        socket.off("remote_move", onRemoteMove);
+        socket.off("remote_play_again", onRemotePlayAgain);
       };
     }
   }, [opponentType, roomData, applyMove, resetBoard]);
 
   // AI plays O in "ai" mode
   useEffect(() => {
-    if (opponentType === 'ai' && state.currentPlayer === "O" && !state.winner) {
+    if (opponentType === "ai" && state.currentPlayer === "O" && !state.winner) {
       setState((s) => ({ ...s, isProcessing: true }));
       const t = setTimeout(() => {
         const logicBoard = state.board.map((cell) => (cell ? cell.char : null));
@@ -150,17 +165,15 @@ export default function GamePage({ onHome }) {
     }
   }, [state.winner, resetBoard]);
 
-  const isMyTurn = opponentType === 'online' && roomData 
-    ? state.currentPlayer === roomData.role 
-    : opponentType === 'ai' 
-      ? state.currentPlayer === 'X' 
-      : true;
+  const isMyTurn =
+    opponentType === "online" && roomData
+      ? state.currentPlayer === roomData.role
+      : opponentType === "ai"
+        ? state.currentPlayer === "X"
+        : true;
 
   const isMyDrawTurn =
-    drawMode &&
-    isMyTurn &&
-    !state.winner &&
-    !state.isProcessing;
+    drawMode && isMyTurn && !state.winner && !state.isProcessing;
 
   const statusText = state.winner
     ? `${state.winner} WINS!`
@@ -168,18 +181,21 @@ export default function GamePage({ onHome }) {
       ? "AI WRITING..."
       : isMyDrawTurn
         ? `DRAW YOUR ${state.currentPlayer}`
-        : opponentType === 'online' && !isMyTurn
+        : opponentType === "online" && !isMyTurn
           ? "WAITING FOR OPPONENT"
           : `${state.currentPlayer}'S TURN`;
 
   return (
     <div className="container">
-      <button className="home-link" onClick={() => {
-        if (roomData?.socket) {
-          roomData.socket.disconnect();
-        }
-        onHome();
-      }}>
+      <button
+        className="home-link"
+        onClick={() => {
+          if (roomData?.socket) {
+            roomData.socket.disconnect();
+          }
+          onHome();
+        }}
+      >
         ← HOME
       </button>
 
@@ -189,9 +205,7 @@ export default function GamePage({ onHome }) {
         <span className="black">O: {state.scores.O}</span>
       </div>
 
-      <p className="status">
-        {statusText}
-      </p>
+      <p className="status">{statusText}</p>
 
       <div className="grid" ref={gridRef}>
         {state.winner && state.winningLine && (
@@ -209,10 +223,7 @@ export default function GamePage({ onHome }) {
 
           const markId = cell ? cell.id : `empty-${i}`;
 
-          const clickable =
-            !state.isProcessing &&
-            !state.winner &&
-            isMyTurn;
+          const clickable = !state.isProcessing && !state.winner && isMyTurn;
 
           // In draw mode, canvas is live on every empty cell if it's my turn
           const showDrawCanvas = isMyDrawTurn && !cell;
@@ -225,8 +236,13 @@ export default function GamePage({ onHome }) {
               onClick={() => {
                 if (!drawMode && clickable) {
                   applyMove(i);
-                  if (opponentType === 'online' && roomData) {
-                    roomData.socket.emit('make_move', { code: roomData.code, move: i, strokes: null });
+                  if (opponentType === "online" && roomData) {
+                    roomData.socket.emit("make_move", {
+                      code: roomData.code,
+                      move: i,
+                      strokes: null,
+                      player: state.currentPlayer,
+                    });
                   }
                 }
               }}
@@ -277,8 +293,13 @@ export default function GamePage({ onHome }) {
                   onConfirm={(strokes) => {
                     setInkStrokes((prev) => ({ ...prev, [i]: strokes }));
                     applyMove(i);
-                    if (opponentType === 'online' && roomData) {
-                      roomData.socket.emit('make_move', { code: roomData.code, move: i, strokes });
+                    if (opponentType === "online" && roomData) {
+                      roomData.socket.emit("make_move", {
+                        code: roomData.code,
+                        move: i,
+                        strokes,
+                        player: state.currentPlayer,
+                      });
                     }
                   }}
                   onCancel={() => {}}
@@ -298,8 +319,8 @@ export default function GamePage({ onHome }) {
             startingPlayer: "X",
           }));
           resetBoard();
-          if (opponentType === 'online' && roomData) {
-             roomData.socket.emit('play_again', { code: roomData.code });
+          if (opponentType === "online" && roomData) {
+            roomData.socket.emit("play_again", { code: roomData.code });
           }
         }}
       >
